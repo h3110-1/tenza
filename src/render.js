@@ -5,6 +5,7 @@ import { state, $, STATUSES, STATUS_BY_KEY } from "./state.js";
 import { toast, toastUndo } from "./toast.js";
 import { db, persist, persistShow } from "./db.js";
 import { expandQuery } from "./abbreviations.js";
+import { openCompare } from "./compare.js";
 
 const grid = $("grid");
 
@@ -179,6 +180,9 @@ function card(s, rank, readOnly) {
   const body = document.createElement("div");
   body.className = "body";
 
+  const titleRow = document.createElement("div");
+  titleRow.className = "title-row";
+
   const title = document.createElement("div");
   title.className = "title";
   title.textContent = s.title;
@@ -188,8 +192,17 @@ function card(s, rank, readOnly) {
     y.textContent = "  (" + s.year + ")";
     title.appendChild(y);
   }
+  titleRow.appendChild(title);
 
-  body.appendChild(title);
+  // "Who has this?" — compare this show against your friends' lists.
+  const cmpBtn = document.createElement("button");
+  cmpBtn.className = "compare-btn";
+  cmpBtn.title = "See which friends have this";
+  cmpBtn.textContent = "👥";
+  cmpBtn.onclick = (e) => { e.stopPropagation(); openCompare(s); };
+  titleRow.appendChild(cmpBtn);
+
+  body.appendChild(titleRow);
 
   const statusEl = buildStatus(s, readOnly);
   if (statusEl) body.appendChild(statusEl);

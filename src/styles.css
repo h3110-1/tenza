@@ -228,8 +228,17 @@ select {
 .del:hover { background: var(--danger); }
 
 .card .body { padding: 12px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
-.card .title { font-weight: 600; font-size: 14px; }
+.card .title-row { display: flex; align-items: flex-start; gap: 8px; }
+.card .title { font-weight: 600; font-size: 14px; flex: 1; min-width: 0; }
 .card .year { color: var(--muted); font-size: 12px; font-weight: 400; }
+
+/* "Who has this?" button on each card */
+.compare-btn {
+  flex-shrink: 0; background: var(--panel-2); border: 1px solid var(--border);
+  color: var(--muted); border-radius: 8px; padding: 4px 7px;
+  font-size: 13px; line-height: 1; font-weight: 600;
+}
+.compare-btn:hover { opacity: 1; border-color: var(--accent); color: var(--text); }
 
 /* Status filter pills */
 .statusfilter { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 0; }
@@ -422,3 +431,18 @@ select {
 .friend-tag { font-size: 12px; color: var(--muted); font-weight: 600; padding: 6px 4px; }
 .friend-empty { color: var(--muted); font-size: 13px; padding: 4px 2px; }
 #incomingList, #outgoingList, #friendsList { display: flex; flex-direction: column; gap: 6px; }
+
+/* "Who has this?" compare modal */
+.compare-body { display: flex; flex-direction: column; gap: 6px; }
+.compare-count { font-size: 13px; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
+.compare-meta { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.compare-status {
+  font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 7px;
+  border: 1px solid var(--border); border-left-width: 3px; background: var(--panel);
+  color: var(--muted);
+}
+.compare-rating {
+  font-size: 13px; font-weight: 700; color: var(--muted);
+  font-variant-numeric: tabular-nums; min-width: 54px; text-align: right;
+}
+.compare-rating.set { color: var(--star); }
