@@ -13,6 +13,7 @@
     <p>Search a show, tag it, rate it, and drag to rank your favourites.</p>
     <div class="whoami" id="whoami" style="display:none">
       Logged in as: <strong id="userEmail" class="editable-name" title="Click to change your username">user</strong>
+      <button class="ghost" id="friendsBtn">Friends <span id="friendsBadge" class="badge" style="display:none"></span></button>
       <button class="ghost" id="signOut">Sign out</button>
     </div>
   </header>
@@ -45,6 +46,11 @@
 
   <!-- App -->
   <div class="wrap" id="appView" style="display:none">
+    <div id="viewingBanner" class="viewing-banner" style="display:none">
+      <span>Viewing <strong id="viewingName"></strong>'s list <span class="ro-tag">read-only</span></span>
+      <button class="ghost" id="viewingBack">← Back to my list</button>
+    </div>
+
     <div class="add-bar">
       <input id="search" type="text" placeholder="Search for your favourite anime" autocomplete="off" />
       <button id="searchBtn">Search</button>
@@ -82,6 +88,33 @@
 
     <div id="empty" class="empty" style="display:none">
       No shows yet — search for one above to get started. 🎬
+    </div>
+  </div>
+
+  <!-- Friends panel -->
+  <div id="friendsPanel" class="panel-overlay" style="display:none">
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">Friends</span>
+        <button class="ghost" id="friendsClose">Close</button>
+      </div>
+      <div class="panel-section">
+        <div class="panel-label">Add a friend</div>
+        <input id="friendSearch" class="auth-input" type="text" placeholder="Search by username…" autocomplete="off" />
+        <div id="friendSearchResults" class="friend-results"></div>
+      </div>
+      <div class="panel-section" id="incomingSection" style="display:none">
+        <div class="panel-label">Friend requests</div>
+        <div id="incomingList"></div>
+      </div>
+      <div class="panel-section" id="outgoingSection" style="display:none">
+        <div class="panel-label">Sent requests</div>
+        <div id="outgoingList"></div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-label">Your friends</div>
+        <div id="friendsList"></div>
+      </div>
     </div>
   </div>
 

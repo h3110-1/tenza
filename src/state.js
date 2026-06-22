@@ -11,6 +11,13 @@ export const state = {
   listFilter: "",           // free-text filter within the current list
   activeStatusFilter: null, // null = all statuses
   unratedCollapsed: false,  // is the Unrated section collapsed?
+
+  // Friends
+  viewingFriend: null,      // { id, username } when viewing a friend's list, else null
+  viewShows: [],            // the friend's shows while viewing
+  friends: [],              // [{ id, username, via }]  (via: "friends" | "friendOf")
+  incomingRequests: [],     // [{ id, fromId, fromName }]
+  outgoingRequests: [],     // [{ id, toId, toName }]
 };
 
 // Watch-status options (order = display order)

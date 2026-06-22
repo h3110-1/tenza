@@ -5,6 +5,7 @@ import { state, $ } from "./state.js";
 import { toast } from "./toast.js";
 import { db, id, toRow, mapRow, isMuted } from "./db.js";
 import { render } from "./render.js";
+import { startFriendsData, stopFriendsData } from "./friends.js";
 
 let unsubShows = null;     // active shows-query unsubscribe fn
 let unsubProfile = null;   // active profile-query unsubscribe fn
@@ -17,6 +18,7 @@ let pendingEmail = "";
 function resetSession() {
   if (unsubShows) { unsubShows(); unsubShows = null; }
   if (unsubProfile) { unsubProfile(); unsubProfile = null; }
+  stopFriendsData();
   initialized = false;
   profileResolved = false;
   currentProfileId = null;
@@ -55,6 +57,7 @@ function startShowsSubscription() {
         initialized = true;
         state.shows = rows;
         render();
+        backfillOwnerId(rows);
         migrateLegacy(rows);
         return;
       }
@@ -74,6 +77,11 @@ function startProfileSubscription() {
       const profile = (resp.data.profiles || [])[0] || null;
       currentProfileId = profile ? profile.id : null;
       state.username = profile ? (profile.username || "") : "";
+      // Backfill ownerId on a profile created before that field existed,
+      // so username search (which keys off ownerId) can find this user.
+      if (profile && !profile.ownerId) {
+        db.transact(db.tx.profiles[profile.id].update({ ownerId: state.currentUser.id })).catch(() => {});
+      }
 
       if (!profileResolved) {
         profileResolved = true;
@@ -147,7 +155,7 @@ async function saveUsername() {
     const pid = currentProfileId || id();
     const fields = currentProfileId
       ? { username: name }
-      : { username: name, createdAt: Date.now() };
+      : { username: name, createdAt: Date.now(), ownerId: state.currentUser.id };
     await db.transact(db.tx.profiles[pid].update(fields).link({ owner: state.currentUser.id }));
     state.username = name;
     currentProfileId = pid;
@@ -156,6 +164,15 @@ async function saveUsername() {
   } catch (e) {
     toast("Couldn't save your username — " + (e?.message || "try again"));
   }
+}
+
+// Backfill the scalar ownerId on any of the user's own shows that predate it,
+// so the friends-view permission rule (which keys off ownerId) covers them.
+function backfillOwnerId(rows) {
+  const missing = rows.filter((s) => !s.ownerId);
+  if (!missing.length) return;
+  missing.forEach((s) => { s.ownerId = state.currentUser.id; });
+  db.transact(missing.map((s) => db.tx.shows[s.id].update({ ownerId: state.currentUser.id }))).catch(() => {});
 }
 
 // One-time migration of this device's pre-account lists.
@@ -213,6 +230,7 @@ export function initAuth() {
     if (state.currentUser) {
       if (!unsubShows) startShowsSubscription();
       if (!unsubProfile) startProfileSubscription();
+      startFriendsData();
     } else {
       enterAuth();
     }

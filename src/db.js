@@ -13,7 +13,15 @@ const schema = i.schema({
       email: i.string().unique().indexed().optional(),
     }),
     profiles: i.entity({
-      username: i.string(),
+      username: i.string().indexed(),
+      createdAt: i.number(),
+      ownerId: i.string().indexed(),
+    }),
+    friendRequests: i.entity({
+      fromId: i.string().indexed(),
+      toId: i.string().indexed(),
+      fromName: i.string(),
+      toName: i.string(),
       createdAt: i.number(),
     }),
     shows: i.entity({
@@ -30,6 +38,7 @@ const schema = i.schema({
       airStatus: i.string(),
       broadcast: i.string(),
       order: i.number().indexed(),
+      ownerId: i.string().indexed(),
     }),
   },
   links: {
@@ -40,6 +49,12 @@ const schema = i.schema({
     profileOwner: {
       forward: { on: "profiles", has: "one", label: "owner" },
       reverse: { on: "$users", has: "one", label: "profile" },
+    },
+    // Symmetric friendship: the accepter links their own record to the
+    // requester. The shows.view rule checks both directions.
+    userFriends: {
+      forward: { on: "$users", has: "many", label: "friends" },
+      reverse: { on: "$users", has: "many", label: "friendOf" },
     },
   },
 });
@@ -78,6 +93,7 @@ export function toRow(s) {
     airStatus: s.airStatus || "",
     broadcast: s.broadcast || "",
     order: typeof s.order === "number" ? s.order : 0,
+    ownerId: s.ownerId || (state.currentUser ? state.currentUser.id : ""),
   };
 }
 
@@ -98,6 +114,7 @@ export function mapRow(r) {
     airStatus: r.airStatus || "",
     broadcast: r.broadcast || "",
     order: typeof r.order === "number" ? r.order : 0,
+    ownerId: r.ownerId || "",
   };
 }
 

@@ -1,4 +1,6 @@
 // Rendering the collection: grid, cards, rating control, tags, status, drag.
+// When viewing a friend's list (state.viewingFriend set), everything renders
+// read-only — no add/remove/rate/reorder controls.
 import { state, $, STATUSES, STATUS_BY_KEY } from "./state.js";
 import { toast, toastUndo } from "./toast.js";
 import { db, persist, persistShow } from "./db.js";
@@ -6,14 +8,22 @@ import { expandQuery } from "./abbreviations.js";
 
 const grid = $("grid");
 
+// The list currently on screen: a friend's when viewing, otherwise our own.
+function currentList() {
+  return state.viewingFriend ? state.viewShows : state.shows;
+}
+function isReadOnly() {
+  return !!state.viewingFriend;
+}
+
 function allTags() {
   const set = new Set();
-  state.shows.forEach((s) => s.tags.forEach((t) => set.add(t)));
+  currentList().forEach((s) => s.tags.forEach((t) => set.add(t)));
   return [...set].sort((a, b) => a.localeCompare(b));
 }
 
 function sortedShows() {
-  let list = state.shows.slice();
+  let list = currentList().slice();
   if (state.activeStatusFilter) list = list.filter((s) => s.status === state.activeStatusFilter);
   if (state.activeTagFilter) list = list.filter((s) => s.tags.includes(state.activeTagFilter));
   if (state.listFilter) {
@@ -34,11 +44,12 @@ function sortedShows() {
 function renderStatusFilter() {
   const box = $("statusfilter");
   box.innerHTML = "";
+  const list = currentList();
   // No statuses set anywhere yet → hide the bar entirely.
-  if (!state.shows.some((s) => s.status)) return;
+  if (!list.some((s) => s.status)) return;
 
   const counts = {};
-  state.shows.forEach((s) => { if (s.status) counts[s.status] = (counts[s.status] || 0) + 1; });
+  list.forEach((s) => { if (s.status) counts[s.status] = (counts[s.status] || 0) + 1; });
 
   const makePill = (key, label, color, count, active) => {
     const b = document.createElement("button");
@@ -52,7 +63,7 @@ function renderStatusFilter() {
     return b;
   };
 
-  box.appendChild(makePill(null, "All", "", state.shows.length, !state.activeStatusFilter));
+  box.appendChild(makePill(null, "All", "", list.length, !state.activeStatusFilter));
   STATUSES.forEach((st) => {
     if (counts[st.key]) {
       box.appendChild(makePill(st.key, st.label, st.color, counts[st.key], state.activeStatusFilter === st.key));
@@ -84,11 +95,12 @@ function renderTagFilter() {
 export function render() {
   renderStatusFilter();
   renderTagFilter();
+  const readOnly = isReadOnly();
   const list = sortedShows();
   const rated = list.filter((s) => s.rating > 0);
   const unrated = list.filter((s) => !s.rating);
 
-  const total = state.shows.length;
+  const total = currentList().length;
   const shown = rated.length + unrated.length;
   const filtering = !!(state.listFilter || state.activeTagFilter || state.activeStatusFilter);
   $("count").textContent = filtering && shown < total
@@ -98,7 +110,9 @@ export function render() {
   const empty = $("empty");
   if (total === 0) {
     empty.style.display = "block";
-    empty.textContent = "No shows yet — search for one above to get started. 🎬";
+    empty.textContent = readOnly
+      ? state.viewingFriend.username + " hasn't added any shows yet."
+      : "No shows yet — search for one above to get started. 🎬";
   } else if (shown === 0) {
     empty.style.display = "block";
     empty.textContent = "No shows match your filter.";
@@ -109,7 +123,7 @@ export function render() {
   // Rated / ranked list
   grid.innerHTML = "";
   const showRanks = state.sortMode === "manual" && !state.activeTagFilter && !state.listFilter;
-  rated.forEach((s, i) => grid.appendChild(card(s, showRanks ? i + 1 : null)));
+  rated.forEach((s, i) => grid.appendChild(card(s, showRanks ? i + 1 : null, readOnly)));
 
   // Unrated list (newly added), separated below
   const uGrid = $("unratedGrid");
@@ -118,10 +132,10 @@ export function render() {
   uSection.style.display = unrated.length ? "block" : "none";
   uSection.classList.toggle("collapsed", state.unratedCollapsed);
   $("unratedCount").textContent = unrated.length ? "(" + unrated.length + ")" : "";
-  unrated.forEach((s) => uGrid.appendChild(card(s, null)));
+  unrated.forEach((s) => uGrid.appendChild(card(s, null, readOnly)));
 }
 
-function card(s, rank) {
+function card(s, rank, readOnly) {
   const el = document.createElement("div");
   el.className = "card";
   el.dataset.id = s.id;
@@ -132,21 +146,23 @@ function card(s, rank) {
   poster.innerHTML =
     (s.imageUrl ? '<img src="' + s.imageUrl + '" alt="" onerror="this.style.display=\'none\'"/>' : "") +
     (rank != null ? '<div class="rank-badge">' + rank + "</div>" : "") +
-    (rank != null ? '<div class="drag-handle" title="Drag to reorder">⠿</div>' : "") +
+    (rank != null && !readOnly ? '<div class="drag-handle" title="Drag to reorder">⠿</div>' : "") +
     (s.airing ? '<div class="airing-badge"><span class="pulse"></span>AIRING</div>' : "") +
-    '<div class="del" title="Remove">✕</div>';
-  poster.querySelector(".del").onclick = () => {
-    const index = state.shows.indexOf(s);
-    state.shows = state.shows.filter((x) => x.id !== s.id);
-    persist(db.tx.shows[s.id].delete());
-    render();
-    toastUndo("Removed " + s.title, () => {
-      state.shows.splice(Math.min(index < 0 ? state.shows.length : index, state.shows.length), 0, s);
-      persistShow(s);
+    (readOnly ? "" : '<div class="del" title="Remove">✕</div>');
+  if (!readOnly) {
+    poster.querySelector(".del").onclick = () => {
+      const index = state.shows.indexOf(s);
+      state.shows = state.shows.filter((x) => x.id !== s.id);
+      persist(db.tx.shows[s.id].delete());
       render();
-      toast("Restored " + s.title);
-    });
-  };
+      toastUndo("Removed " + s.title, () => {
+        state.shows.splice(Math.min(index < 0 ? state.shows.length : index, state.shows.length), 0, s);
+        persistShow(s);
+        render();
+        toast("Restored " + s.title);
+      });
+    };
+  }
 
   // Click the poster to open the show on MyAnimeList (ignoring the controls).
   const malUrl = s.url || (s.malId ? "https://myanimelist.net/anime/" + s.malId : "");
@@ -173,43 +189,57 @@ function card(s, rank) {
     title.appendChild(y);
   }
 
+  body.appendChild(title);
+
+  const statusEl = buildStatus(s, readOnly);
+  if (statusEl) body.appendChild(statusEl);
+
+  const broadcast = buildBroadcast(s);
+  if (broadcast) body.appendChild(broadcast);
+
   // Cards that start in the Unrated section shouldn't jump up to the ranked
   // list the instant you pick a whole number — wait until the pointer leaves
-  // so you can still dial in a decimal first.
+  // so you can still dial in a decimal first. (Editable lists only.)
   const startedUnrated = !s.rating;
   let pendingReflow = false;
 
-  const rating = buildRating(s, (crossedBoundary) => {
-    if (!crossedBoundary) return;            // same section, card just repaints
+  const rating = buildRating(s, readOnly, (crossedBoundary) => {
+    if (!crossedBoundary) return;             // same section, card just repaints
     if (startedUnrated) pendingReflow = true; // defer the move until mouseleave
     else render();                            // clearing a rated show drops it down immediately
   });
+  body.appendChild(rating);
 
   const tags = document.createElement("div");
   tags.className = "tags";
-  renderCardTags(tags, s);
-
-  body.appendChild(title);
-  body.appendChild(buildStatusSelect(s));
-  const broadcast = buildBroadcast(s);
-  if (broadcast) body.appendChild(broadcast);
-  body.appendChild(rating);
+  renderCardTags(tags, s, readOnly);
   body.appendChild(tags);
 
   el.appendChild(poster);
   el.appendChild(body);
 
-  if (startedUnrated) {
+  if (!readOnly && startedUnrated) {
     el.addEventListener("mouseleave", () => {
       if (pendingReflow) { pendingReflow = false; render(); }
     });
   }
 
-  setupDrag(el, s);
+  if (!readOnly) setupDrag(el, s);
   return el;
 }
 
-function buildStatusSelect(s) {
+// Editable status dropdown, or a static badge when read-only.
+function buildStatus(s, readOnly) {
+  if (readOnly) {
+    if (!s.status) return null;
+    const st = STATUS_BY_KEY[s.status];
+    const el = document.createElement("div");
+    el.className = "status-view";
+    el.style.color = st ? st.color : "var(--muted)";
+    el.style.borderLeftColor = st ? st.color : "var(--border)";
+    el.textContent = st ? st.label : s.status;
+    return el;
+  }
   const sel = document.createElement("select");
   sel.className = "status-select";
   [{ key: "", label: "▾ Set status" }].concat(STATUSES).forEach((o) => {
@@ -246,9 +276,10 @@ function buildBroadcast(s) {
 
 // 1–10 rating: a row of 10 bars for the whole number, plus an identical
 // row directly below for the decimal (tenths), giving scores like 7.4.
-function buildRating(s, onChange) {
+// Read-only mode paints the saved score with no interaction.
+function buildRating(s, readOnly, onChange) {
   const wrap = document.createElement("div");
-  wrap.className = "rating-wrap";
+  wrap.className = "rating-wrap" + (readOnly ? " readonly" : "");
 
   // Row 1 — whole number (1–10)
   const row1 = document.createElement("div");
@@ -302,34 +333,38 @@ function buildRating(s, onChange) {
   for (let i = 1; i <= 10; i++) {
     const bar = document.createElement("div");
     bar.className = "bar";
-    bar.title = "Rate " + i;
-    bar.onmouseenter = () => paint(i, null);
-    bar.onclick = () => {
-      const wasRated = s.rating > 0;
-      if (i === whole() && digit() === 0) s.rating = 0;           // click current score again to clear
-      else s.rating = i === 10 ? 10 : i + digit() / 10;           // keep the decimal when changing the whole part
-      persistShow(s);
-      paint();
-      // Let the card decide whether/when to move between sections.
-      if (onChange) onChange(wasRated !== s.rating > 0);
-    };
+    if (!readOnly) {
+      bar.title = "Rate " + i;
+      bar.onmouseenter = () => paint(i, null);
+      bar.onclick = () => {
+        const wasRated = s.rating > 0;
+        if (i === whole() && digit() === 0) s.rating = 0;           // click current score again to clear
+        else s.rating = i === 10 ? 10 : i + digit() / 10;           // keep the decimal when changing the whole part
+        persistShow(s);
+        paint();
+        // Let the card decide whether/when to move between sections.
+        if (onChange) onChange(wasRated !== s.rating > 0);
+      };
+    }
     bars.appendChild(bar);
   }
-  bars.onmouseleave = () => paint();
+  if (!readOnly) bars.onmouseleave = () => paint();
 
   for (let k = 0; k <= 9; k++) {
     const bar = document.createElement("div");
     bar.className = "bar";
-    bar.title = "Decimal ." + k;
-    bar.onmouseenter = () => paint(null, k);
-    bar.onclick = () => {
-      s.rating = whole() + k / 10;
-      persistShow(s);
-      paint();
-    };
+    if (!readOnly) {
+      bar.title = "Decimal ." + k;
+      bar.onmouseenter = () => paint(null, k);
+      bar.onclick = () => {
+        s.rating = whole() + k / 10;
+        persistShow(s);
+        paint();
+      };
+    }
     decBars.appendChild(bar);
   }
-  decBars.onmouseleave = () => paint();
+  if (!readOnly) decBars.onmouseleave = () => paint();
 
   wrap.appendChild(row1);
   wrap.appendChild(row2);
@@ -337,7 +372,7 @@ function buildRating(s, onChange) {
   return wrap;
 }
 
-function renderCardTags(container, s) {
+function renderCardTags(container, s, readOnly) {
   container.innerHTML = "";
   s.tags.forEach((t) => {
     const chip = document.createElement("span");
@@ -345,18 +380,22 @@ function renderCardTags(container, s) {
     const label = document.createElement("span");
     label.textContent = "#" + t;
     label.onclick = () => { state.activeTagFilter = state.activeTagFilter === t ? null : t; render(); };
-    const x = document.createElement("span");
-    x.className = "x";
-    x.textContent = "✕";
-    x.onclick = (e) => {
-      e.stopPropagation();
-      s.tags = s.tags.filter((tag) => tag !== t);
-      persistShow(s); render();
-    };
     chip.appendChild(label);
-    chip.appendChild(x);
+    if (!readOnly) {
+      const x = document.createElement("span");
+      x.className = "x";
+      x.textContent = "✕";
+      x.onclick = (e) => {
+        e.stopPropagation();
+        s.tags = s.tags.filter((tag) => tag !== t);
+        persistShow(s); render();
+      };
+      chip.appendChild(x);
+    }
     container.appendChild(chip);
   });
+
+  if (readOnly) return;
 
   const addBtn = document.createElement("span");
   addBtn.className = "tag-add";

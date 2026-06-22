@@ -5,6 +5,7 @@ import { toast } from "./toast.js";
 import { render } from "./render.js";
 import { initSearch } from "./search.js";
 import { initAuth } from "./auth.js";
+import { initFriends } from "./friends.js";
 
 /* ---------- Local prefs (theme only — a device preference, not user data) ---------- */
 const memStore = {};
@@ -61,4 +62,5 @@ $("themeToggle").addEventListener("click", () => {
 
 /* ---------- Boot ---------- */
 initSearch();
+initFriends();
 initAuth();
