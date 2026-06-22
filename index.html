@@ -18,6 +18,20 @@
     --danger: #ff5c5c;
     --radius: 14px;
   }
+  body.light {
+    --bg: #f4f5f8;
+    --panel: #ffffff;
+    --panel-2: #eceef3;
+    --border: #d9dde6;
+    --text: #1b1e28;
+    --muted: #616877;
+    --star: #e0a100;
+  }
+  /* Light-mode overrides for the few hardcoded dark fills */
+  body.light .rating .bar { background: #d3d7e0; }
+  body.light .decimal-row .bar { background: #dde0e8; }
+  body.light .rating .bar.preview { background: #f0d49a; }
+  body.light .decimal-row .bar.preview { background: #c9bdf3; }
   * { box-sizing: border-box; }
   body {
     margin: 0;
@@ -112,9 +126,15 @@
   .result:last-child { border-bottom: none; }
   .result:hover { background: var(--panel-2); }
   .result img { width: 42px; height: 60px; object-fit: cover; border-radius: 6px; flex-shrink: 0; background: var(--panel-2); }
-  .result .meta { min-width: 0; }
+  .result .meta { min-width: 0; flex: 1; }
   .result .meta .t { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .result .meta .s { color: var(--muted); font-size: 12px; }
+  .result.added { cursor: default; opacity: .5; }
+  .result.added:hover { background: none; }
+  .result .added-tag {
+    flex-shrink: 0; color: #3ddc84; font-size: 12px; font-weight: 700;
+    border: 1px solid #3ddc84; border-radius: 999px; padding: 3px 9px;
+  }
   .results .status { padding: 14px; color: var(--muted); font-size: 14px; text-align: center; }
 
   /* Controls */
@@ -274,41 +294,60 @@
     display: flex; align-items: baseline; gap: 10px;
     padding-top: 20px; margin-bottom: 14px;
     border-top: 1px solid var(--border);
+    cursor: pointer; user-select: none;
+  }
+  .section-head .chevron {
+    color: var(--muted); font-size: 11px; transition: transform .15s ease;
+    align-self: center;
   }
   .section-title { font-size: 15px; font-weight: 700; color: var(--text); }
+  .section-count { font-size: 13px; color: var(--muted); font-weight: 600; }
   .section-sub { font-size: 12px; color: var(--muted); }
+  #unratedSection.collapsed .chevron { transform: rotate(-90deg); }
+  #unratedSection.collapsed #unratedGrid { display: none; }
+  #unratedSection.collapsed .section-head { margin-bottom: 0; }
 
   .empty { text-align: center; color: var(--muted); padding: 60px 20px; font-size: 15px; }
-  .modal-overlay {
-    position: fixed; inset: 0; z-index: 100;
-    background: rgba(0,0,0,.6);
+
+  .theme-toggle {
+    position: fixed; top: 16px; right: 16px; z-index: 60;
+    background: var(--panel); border: 1px solid var(--border); color: var(--text);
+    border-radius: 999px; padding: 7px 13px; font-size: 13px; font-weight: 600; cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0,0,0,.25);
+  }
+  .theme-toggle:hover { background: var(--panel-2); }
+
+  .back-to-top {
+    position: fixed; bottom: 24px; right: 24px; z-index: 60;
+    width: 44px; height: 44px; border-radius: 50%;
+    background: var(--accent); color: #fff; border: none;
+    font-size: 20px; line-height: 1; cursor: pointer;
+    box-shadow: 0 8px 24px rgba(0,0,0,.45);
     display: flex; align-items: center; justify-content: center;
+    opacity: 0; transform: translateY(10px); pointer-events: none;
+    transition: opacity .2s ease, transform .2s ease;
   }
-  .modal {
-    background: var(--panel); border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 20px;
-    width: min(380px, 90vw);
-    box-shadow: 0 20px 60px rgba(0,0,0,.6);
-  }
-  .modal-title { font-size: 15px; margin-bottom: 14px; }
-  .modal-input {
-    width: 100%; padding: 10px 12px; margin-bottom: 16px;
-    border-radius: 10px; border: 1px solid var(--border);
-    background: var(--panel-2); color: var(--text); font-size: 14px; outline: none;
-  }
-  .modal-input:focus { border-color: var(--accent); }
-  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
+  .back-to-top.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
+  .back-to-top:hover { filter: brightness(1.1); }
 
   .toast {
     position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
     background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
     padding: 10px 16px; border-radius: 10px; font-size: 13px; z-index: 50;
     box-shadow: 0 8px 30px rgba(0,0,0,.5); opacity: 0; transition: opacity .25s; pointer-events: none;
+    display: flex; align-items: center; gap: 14px;
   }
   .toast.show { opacity: 1; }
+  .toast.has-action { pointer-events: auto; }
+  .toast .undo-btn {
+    background: transparent; border: none; color: var(--accent);
+    font-weight: 700; font-size: 13px; cursor: pointer; padding: 2px 2px;
+  }
+  .toast .undo-btn:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
+  <button id="themeToggle" class="theme-toggle"></button>
   <header>
     <h1>Tenza</h1>
     <p>Search a show, tag it, rate it, and drag to rank your favourites.</p>
@@ -342,8 +381,10 @@
     <div id="grid" class="grid"></div>
 
     <div id="unratedSection" style="display:none">
-      <div class="section-head">
+      <div class="section-head" id="unratedToggle" title="Click to collapse/expand">
+        <span class="chevron">▼</span>
         <span class="section-title">Unrated</span>
+        <span class="section-count" id="unratedCount"></span>
         <span class="section-sub">newly added — give them a score to move them up</span>
       </div>
       <div id="unratedGrid" class="grid"></div>
@@ -354,16 +395,7 @@
     </div>
   </div>
 
-  <div id="modal" class="modal-overlay" style="display:none">
-    <div class="modal">
-      <div class="modal-title" id="modalTitle"></div>
-      <input id="modalInput" class="modal-input" type="text" style="display:none" autocomplete="off" />
-      <div class="modal-actions">
-        <button class="ghost" id="modalCancel">Cancel</button>
-        <button id="modalOk">OK</button>
-      </div>
-    </div>
-  </div>
+  <button id="backToTop" class="back-to-top" title="Back to top" aria-label="Back to top">↑</button>
 
   <div id="toast" class="toast"></div>
 
@@ -378,6 +410,7 @@
   let activeTagFilter = null;
   let listFilter = ""; // free-text filter within the current list
   let activeStatusFilter = null; // null = all statuses
+  let unratedCollapsed = false;  // is the Unrated section collapsed?
 
   // Watch-status options (order = display order)
   const STATUSES = [
@@ -442,43 +475,32 @@
   function toast(msg) {
     const t = $("toast");
     t.textContent = msg;
+    t.classList.remove("has-action");
     t.classList.add("show");
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => t.classList.remove("show"), 2200);
   }
 
-  /* ---------- In-app dialogs (native prompt/confirm are blocked in sandboxed previews) ---------- */
-  function showModal(opts) {
-    return new Promise((resolve) => {
-      const overlay = $("modal");
-      const input = $("modalInput");
-      const ok = $("modalOk");
-      const cancel = $("modalCancel");
-      $("modalTitle").textContent = opts.title;
-      input.style.display = opts.withInput ? "block" : "none";
-      input.value = opts.defaultValue || "";
-      ok.textContent = opts.okLabel || "OK";
-      overlay.style.display = "flex";
-      if (opts.withInput) setTimeout(() => { input.focus(); input.select(); }, 0);
-
-      function done(result) {
-        overlay.style.display = "none";
-        ok.onclick = cancel.onclick = overlay.onclick = input.onkeydown = null;
-        resolve(result);
-      }
-      ok.onclick = () => done(opts.withInput ? input.value : true);
-      cancel.onclick = () => done(opts.withInput ? null : false);
-      input.onkeydown = (e) => {
-        if (e.key === "Enter") done(input.value);
-        else if (e.key === "Escape") done(null);
-      };
-      overlay.onclick = (e) => { if (e.target === overlay) done(opts.withInput ? null : false); };
-    });
+  // A toast with an "Undo" action that lingers a few seconds.
+  function toastUndo(msg, onUndo) {
+    const t = $("toast");
+    t.innerHTML = "";
+    const span = document.createElement("span");
+    span.textContent = msg;
+    const btn = document.createElement("button");
+    btn.className = "undo-btn";
+    btn.textContent = "Undo";
+    btn.onclick = () => {
+      clearTimeout(toastTimer);
+      t.classList.remove("show", "has-action");
+      onUndo();
+    };
+    t.appendChild(span);
+    t.appendChild(btn);
+    t.classList.add("show", "has-action");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove("show", "has-action"), 6000);
   }
-  const askText = (title, defaultValue, okLabel) =>
-    showModal({ title: title, withInput: true, defaultValue: defaultValue, okLabel: okLabel });
-  const askConfirm = (title, okLabel) =>
-    showModal({ title: title, withInput: false, okLabel: okLabel });
 
   /* ---------- Jikan search ---------- */
   // Popular fan abbreviations → a full title Jikan understands.
@@ -579,14 +601,16 @@
       const title = a.title_english || a.title || "Untitled";
       const year = a.year || (a.aired && a.aired.prop && a.aired.prop.from && a.aired.prop.from.year) || "";
       const type = a.type || "";
+      const alreadyAdded = a.mal_id && shows.some((s) => s.malId === a.mal_id);
       const el = document.createElement("div");
-      el.className = "result";
+      el.className = "result" + (alreadyAdded ? " added" : "");
       el.innerHTML =
         '<img src="' + img + '" alt="" onerror="this.style.visibility=\'hidden\'"/>' +
-        '<div class="meta"><div class="t"></div><div class="s"></div></div>';
+        '<div class="meta"><div class="t"></div><div class="s"></div></div>' +
+        (alreadyAdded ? '<span class="added-tag">✓ Added</span>' : "");
       el.querySelector(".t").textContent = title;
       el.querySelector(".s").textContent = [type, year].filter(Boolean).join(" · ");
-      el.addEventListener("click", () => addShow(a));
+      if (!alreadyAdded) el.addEventListener("click", () => addShow(a));
       resultsBox.appendChild(el);
     });
   }
@@ -745,7 +769,10 @@
     // Unrated list (newly added), separated below
     const uGrid = $("unratedGrid");
     uGrid.innerHTML = "";
-    $("unratedSection").style.display = unrated.length ? "block" : "none";
+    const uSection = $("unratedSection");
+    uSection.style.display = unrated.length ? "block" : "none";
+    uSection.classList.toggle("collapsed", unratedCollapsed);
+    $("unratedCount").textContent = unrated.length ? "(" + unrated.length + ")" : "";
     unrated.forEach((s) => uGrid.appendChild(card(s, null)));
   }
 
@@ -763,11 +790,17 @@
       (rank != null ? '<div class="drag-handle" title="Drag to reorder">⠿</div>' : "") +
       (s.airing ? '<div class="airing-badge"><span class="pulse"></span>AIRING</div>' : "") +
       '<div class="del" title="Remove">✕</div>';
-    poster.querySelector(".del").onclick = async () => {
-      if (await askConfirm("Remove “" + s.title + "” from your list?", "Remove")) {
-        shows = shows.filter((x) => x.id !== s.id);
-        save(); render();
-      }
+    poster.querySelector(".del").onclick = () => {
+      const index = shows.indexOf(s);
+      shows = shows.filter((x) => x.id !== s.id);
+      save();
+      render();
+      toastUndo("Removed " + s.title, () => {
+        shows.splice(Math.min(index < 0 ? shows.length : index, shows.length), 0, s);
+        save();
+        render();
+        toast("Restored " + s.title);
+      });
     };
 
     // Body
@@ -1051,6 +1084,32 @@
   $("sort").addEventListener("change", (e) => { sortMode = e.target.value; render(); });
 
   $("listFilter").addEventListener("input", (e) => { listFilter = e.target.value.trim(); render(); });
+
+  $("unratedToggle").addEventListener("click", () => {
+    unratedCollapsed = !unratedCollapsed;
+    $("unratedSection").classList.toggle("collapsed", unratedCollapsed);
+  });
+
+  const backToTop = $("backToTop");
+  window.addEventListener("scroll", () => {
+    backToTop.classList.toggle("show", window.scrollY > 400);
+  }, { passive: true });
+  backToTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+
+  const THEME_KEY = "animeTracker.theme";
+  function applyTheme(theme) {
+    document.body.classList.toggle("light", theme === "light");
+    const btn = $("themeToggle");
+    btn.textContent = theme === "light" ? "🌙 Dark" : "☀️ Light";
+    btn.title = theme === "light" ? "Switch to dark theme" : "Switch to light theme";
+  }
+  let theme = readJSON(THEME_KEY, "dark");
+  applyTheme(theme);
+  $("themeToggle").addEventListener("click", () => {
+    theme = theme === "light" ? "dark" : "light";
+    writeJSON(THEME_KEY, theme);
+    applyTheme(theme);
+  });
 
   shows = load();
   render();
