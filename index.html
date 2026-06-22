@@ -870,7 +870,17 @@
       title.appendChild(y);
     }
 
-    const rating = buildRating(s);
+    // Cards that start in the Unrated section shouldn't jump up to the ranked
+    // list the instant you pick a whole number — wait until the pointer leaves
+    // so you can still dial in a decimal first.
+    const startedUnrated = !s.rating;
+    let pendingReflow = false;
+
+    const rating = buildRating(s, (crossedBoundary) => {
+      if (!crossedBoundary) return;            // same section, card just repaints
+      if (startedUnrated) pendingReflow = true; // defer the move until mouseleave
+      else render();                            // clearing a rated show drops it down immediately
+    });
 
     const tags = document.createElement("div");
     tags.className = "tags";
@@ -885,6 +895,12 @@
 
     el.appendChild(poster);
     el.appendChild(body);
+
+    if (startedUnrated) {
+      el.addEventListener("mouseleave", () => {
+        if (pendingReflow) { pendingReflow = false; render(); }
+      });
+    }
 
     setupDrag(el, s);
     return el;
@@ -927,7 +943,7 @@
 
   // 1–10 rating: a row of 10 bars for the whole number, plus an identical
   // row directly below for the decimal (tenths), giving scores like 7.4.
-  function buildRating(s) {
+  function buildRating(s, onChange) {
     const wrap = document.createElement("div");
     wrap.className = "rating-wrap";
 
@@ -990,9 +1006,9 @@
         if (i === whole() && digit() === 0) s.rating = 0;           // click current score again to clear
         else s.rating = i === 10 ? 10 : i + digit() / 10;           // keep the decimal when changing the whole part
         save();
-        // Moving in or out of "rated" shifts the card between sections, so re-render.
-        if (wasRated !== s.rating > 0) render();
-        else paint();
+        paint();
+        // Let the card decide whether/when to move between sections.
+        if (onChange) onChange(wasRated !== s.rating > 0);
       };
       bars.appendChild(bar);
     }
