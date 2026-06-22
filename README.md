@@ -28,11 +28,11 @@ A lightweight web app for tracking, tagging, rating, and ranking your favourite 
 - Filter your list by status, with live counts per status.
 - Currently-broadcasting shows get an **AIRING** badge and their broadcast schedule.
 
-### 👥 Profiles
-- Keep **separate lists for different people** — switch, rename, and delete profiles. Each person's shows, tags, ratings, and ranking are kept apart.
+### 👤 Account
+- The header shows who's logged in. For now this is a single list with a placeholder name — a proper login system is planned.
 
 ### 💾 Saving
-- Everything is saved automatically in your browser's local storage, so your lists persist between sessions on that machine.
+- Everything is saved automatically in your browser's local storage, so your list persists between sessions on that machine.
 
 ## Usage
 
