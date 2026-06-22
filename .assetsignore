@@ -1,0 +1,14 @@
+# Files in the asset directory (repo root) that Cloudflare Workers should NOT
+# upload as static assets. Unlike Pages, Workers does not auto-exclude these —
+# without this, node_modules/workerd (~119 MiB) blows the 25 MiB per-file limit.
+node_modules
+.git
+.gitignore
+.DS_Store
+.claude
+
+# Dev-only tooling / config — not part of the served site
+package.json
+package-lock.json
+instant.perms.ts
+instant.schema.ts
