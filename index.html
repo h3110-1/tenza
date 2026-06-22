@@ -333,7 +333,7 @@
     </div>
 
     <div class="controls">
-      <input id="listFilter" class="list-filter" type="text" placeholder="🔍 Filter this list by title or tag…" autocomplete="off" />
+      <input id="listFilter" class="list-filter" type="text" placeholder="🔍 Filter this list by title…" autocomplete="off" />
       <span class="label">Sort by</span>
       <select id="sort">
         <option value="manual">My ranking (drag to reorder)</option>
@@ -737,7 +737,7 @@
       const expanded = expandQuery(listFilter).toLowerCase(); // e.g. "jjk" -> "jujutsu kaisen"
       const terms = expanded === q ? [q] : [q, expanded];
       list = list.filter((s) => {
-        const hay = (s.title + " " + s.tags.join(" ")).toLowerCase();
+        const hay = s.title.toLowerCase();
         return terms.some((t) => hay.includes(t));
       });
     }
