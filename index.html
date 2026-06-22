@@ -12,7 +12,7 @@
     <h1>Tenza</h1>
     <p>Search a show, tag it, rate it, and drag to rank your favourites.</p>
     <div class="whoami" id="whoami" style="display:none">
-      Logged in as: <strong id="userEmail">user</strong>
+      Logged in as: <strong id="userEmail" class="editable-name" title="Click to change your username">user</strong>
       <button class="ghost" id="signOut">Sign out</button>
     </div>
   </header>
@@ -32,6 +32,13 @@
         <input id="authCode" class="auth-input" type="text" inputmode="numeric" placeholder="6-digit code" autocomplete="one-time-code" />
         <button class="primary" id="authVerify">Verify &amp; sign in</button>
         <button class="ghost" id="authBack">Use a different email</button>
+      </div>
+      <div id="authUsernameStep" style="display:none">
+        <div class="auth-h" id="authUsernameHeading">Choose a username</div>
+        <p class="auth-sub">This is the name shown while you're logged in. You can change it anytime.</p>
+        <input id="authUsername" class="auth-input" type="text" placeholder="e.g. AnimeFan42" autocomplete="off" maxlength="40" />
+        <button class="primary" id="authUsernameSave">Save</button>
+        <button class="ghost" id="authUsernameSkip">Skip for now</button>
       </div>
     </div>
   </div>

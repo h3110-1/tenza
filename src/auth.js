@@ -1,30 +1,47 @@
-// Magic-code sign-in, the per-user shows subscription, and one-time
-// migration of this device's old localStorage lists into the account.
+// Magic-code sign-in, the per-user shows + profile subscriptions, the
+// "choose a username" step, and one-time migration of this device's old
+// localStorage lists into the account.
 import { state, $ } from "./state.js";
 import { toast } from "./toast.js";
 import { db, id, toRow, mapRow, isMuted } from "./db.js";
 import { render } from "./render.js";
 
-let unsubShows = null;   // active shows-query unsubscribe fn
-let initialized = false; // has the first shows query result loaded?
+let unsubShows = null;     // active shows-query unsubscribe fn
+let unsubProfile = null;   // active profile-query unsubscribe fn
+let initialized = false;   // has the first shows query result loaded?
+let profileResolved = false; // has the first profile result decided the screen?
+let currentProfileId = null; // id of the user's profile row (null = none yet)
+let editingUsername = false; // is the username step open to edit (vs first set)?
 let pendingEmail = "";
+
+function resetSession() {
+  if (unsubShows) { unsubShows(); unsubShows = null; }
+  if (unsubProfile) { unsubProfile(); unsubProfile = null; }
+  initialized = false;
+  profileResolved = false;
+  currentProfileId = null;
+  editingUsername = false;
+  state.shows = [];
+  state.username = "";
+}
+
+function updateWhoami() {
+  $("userEmail").textContent = state.username || state.currentUser?.email || "you";
+}
 
 function enterAuth() {
   $("authView").style.display = "flex";
   $("appView").style.display = "none";
   $("whoami").style.display = "none";
-  if (unsubShows) { unsubShows(); unsubShows = null; }
-  initialized = false;
-  state.shows = [];
+  resetSession();
   showEmailStep();
 }
 
-function enterApp() {
+function showApp() {
   $("authView").style.display = "none";
   $("appView").style.display = "block";
   $("whoami").style.display = "inline-flex";
-  $("userEmail").textContent = state.currentUser.email || "you";
-  if (!unsubShows) startShowsSubscription();
+  updateWhoami();
 }
 
 function startShowsSubscription() {
@@ -48,13 +65,52 @@ function startShowsSubscription() {
   );
 }
 
+function startProfileSubscription() {
+  unsubProfile = db.subscribeQuery(
+    { profiles: { $: { where: { "owner.id": state.currentUser.id } } } },
+    (resp) => {
+      if (resp.error) { toast("Couldn't load your profile — " + (resp.error.message || "")); return; }
+      if (!resp.data) return;
+      const profile = (resp.data.profiles || [])[0] || null;
+      currentProfileId = profile ? profile.id : null;
+      state.username = profile ? (profile.username || "") : "";
+
+      if (!profileResolved) {
+        profileResolved = true;
+        // Brand-new account with no username yet → invite them to pick one.
+        if (state.username) showApp();
+        else showUsernameStep();
+      } else if ($("appView").style.display !== "none") {
+        updateWhoami(); // live update (e.g. changed in another tab)
+      }
+    }
+  );
+}
+
+/* ---------- Auth screen steps ---------- */
 function showEmailStep() {
+  $("authUsernameStep").style.display = "none";
   $("authCodeStep").style.display = "none";
   $("authEmailStep").style.display = "block";
 }
 function showCodeStep() {
+  $("authUsernameStep").style.display = "none";
   $("authEmailStep").style.display = "none";
   $("authCodeStep").style.display = "block";
+}
+function showUsernameStep() {
+  $("authView").style.display = "flex";
+  $("appView").style.display = "none";
+  $("whoami").style.display = "none";
+  $("authEmailStep").style.display = "none";
+  $("authCodeStep").style.display = "none";
+  $("authUsernameStep").style.display = "block";
+  $("authUsernameHeading").textContent = editingUsername ? "Change your username" : "Choose a username";
+  $("authUsernameSkip").textContent = editingUsername ? "Cancel" : "Skip for now";
+  const input = $("authUsername");
+  // Suggest the email's local part for a first-time pick; the current name when editing.
+  input.value = state.username || (state.currentUser?.email || "").split("@")[0] || "";
+  setTimeout(() => { input.focus(); input.select(); }, 0);
 }
 
 async function sendCode() {
@@ -77,9 +133,28 @@ async function verifyCode() {
   if (!code) { toast("Enter the code from your email"); return; }
   try {
     await db.auth.signInWithMagicCode({ email: pendingEmail, code });
-    // subscribeAuth fires and switches us into the app.
+    // subscribeAuth fires; the profile subscription then decides whether to
+    // show the app or the "choose a username" step.
   } catch (e) {
     toast("That code didn't work — " + (e?.body?.message || e?.message || "try again"));
+  }
+}
+
+async function saveUsername() {
+  const name = $("authUsername").value.trim();
+  if (!name) { toast("Pick a username (or skip for now)"); return; }
+  try {
+    const pid = currentProfileId || id();
+    const fields = currentProfileId
+      ? { username: name }
+      : { username: name, createdAt: Date.now() };
+    await db.transact(db.tx.profiles[pid].update(fields).link({ owner: state.currentUser.id }));
+    state.username = name;
+    currentProfileId = pid;
+    editingUsername = false;
+    showApp();
+  } catch (e) {
+    toast("Couldn't save your username — " + (e?.message || "try again"));
   }
 }
 
@@ -135,8 +210,12 @@ export function initAuth() {
   db.subscribeAuth((res) => {
     if (res.error) { toast("Auth error — " + (res.error.message || "try again")); return; }
     state.currentUser = res.user || null;
-    if (state.currentUser) enterApp();
-    else enterAuth();
+    if (state.currentUser) {
+      if (!unsubShows) startShowsSubscription();
+      if (!unsubProfile) startProfileSubscription();
+    } else {
+      enterAuth();
+    }
   });
 
   $("authSendCode").addEventListener("click", sendCode);
@@ -144,5 +223,14 @@ export function initAuth() {
   $("authVerify").addEventListener("click", verifyCode);
   $("authCode").addEventListener("keydown", (e) => { if (e.key === "Enter") verifyCode(); });
   $("authBack").addEventListener("click", showEmailStep);
+
+  $("authUsernameSave").addEventListener("click", saveUsername);
+  $("authUsername").addEventListener("keydown", (e) => { if (e.key === "Enter") saveUsername(); });
+  // "Skip for now" (first run) or "Cancel" (editing) → just show the app.
+  $("authUsernameSkip").addEventListener("click", () => { editingUsername = false; showApp(); });
+
+  // Click the displayed name to change it.
+  $("userEmail").addEventListener("click", () => { editingUsername = true; showUsernameStep(); });
+
   $("signOut").addEventListener("click", () => db.auth.signOut());
 }

@@ -12,6 +12,10 @@ const schema = i.schema({
     $users: i.entity({
       email: i.string().unique().indexed().optional(),
     }),
+    profiles: i.entity({
+      username: i.string(),
+      createdAt: i.number(),
+    }),
     shows: i.entity({
       malId: i.any(),
       url: i.string(),
@@ -32,6 +36,10 @@ const schema = i.schema({
     showsOwner: {
       forward: { on: "shows", has: "one", label: "owner" },
       reverse: { on: "$users", has: "many", label: "shows" },
+    },
+    profileOwner: {
+      forward: { on: "profiles", has: "one", label: "owner" },
+      reverse: { on: "$users", has: "one", label: "profile" },
     },
   },
 });

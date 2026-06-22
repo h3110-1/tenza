@@ -4,6 +4,7 @@
 
 export const state = {
   currentUser: null,        // signed-in user ({ id, email, ... }) or null
+  username: "",             // chosen display name (falls back to email if empty)
   shows: [],                // the user's list (kept in manual / `order` order)
   sortMode: "manual",
   activeTagFilter: null,

@@ -49,6 +49,8 @@ header p { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
 .whoami { margin-top: 12px; color: var(--muted); font-size: 13px; display: inline-flex; align-items: center; gap: 10px; }
 .whoami strong { color: var(--text); font-weight: 600; }
 .whoami button { padding: 6px 12px; font-size: 12px; }
+.editable-name { cursor: pointer; }
+.editable-name:hover { text-decoration: underline; }
 
 /* Sign-in screen */
 .authview { display: flex; align-items: center; justify-content: center; padding: 50px 20px; }
