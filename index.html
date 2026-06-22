@@ -186,6 +186,9 @@
   .card.dragover { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent) inset; }
   .card .poster { position: relative; aspect-ratio: 2/3; background: var(--panel-2); }
   .card .poster img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .card .poster.clickable { cursor: pointer; }
+  .card .poster.clickable img { transition: opacity .15s ease; }
+  .card .poster.clickable:hover img { opacity: .82; }
   .rank-badge {
     position: absolute; top: 8px; left: 8px;
     background: rgba(0,0,0,.65); backdrop-filter: blur(4px);
@@ -639,6 +642,7 @@
     shows.push({
       id: uid(),
       malId: a.mal_id || null,
+      url: a.url || (a.mal_id ? "https://myanimelist.net/anime/" + a.mal_id : ""),
       title: title,
       imageUrl: (a.images && a.images.jpg && (a.images.jpg.large_image_url || a.images.jpg.image_url)) || "",
       year: a.year || (a.aired && a.aired.prop && a.aired.prop.from && a.aired.prop.from.year) || "",
@@ -802,6 +806,17 @@
         toast("Restored " + s.title);
       });
     };
+
+    // Click the poster to open the show on MyAnimeList (ignoring the controls).
+    const malUrl = s.url || (s.malId ? "https://myanimelist.net/anime/" + s.malId : "");
+    if (malUrl) {
+      poster.classList.add("clickable");
+      poster.title = "Open on MyAnimeList";
+      poster.addEventListener("click", (e) => {
+        if (e.target.closest(".del") || e.target.closest(".drag-handle")) return;
+        window.open(malUrl, "_blank", "noopener");
+      });
+    }
 
     // Body
     const body = document.createElement("div");
