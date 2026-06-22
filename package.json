@@ -1,0 +1,9 @@
+{
+  "name": "tenza",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Anime watchlist app (buildless static site; package.json exists only so instant-cli recognizes the project root).",
+  "devDependencies": {
+    "@instantdb/core": "latest"
+  }
+}

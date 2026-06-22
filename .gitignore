@@ -3,5 +3,8 @@
 Thumbs.db
 *.log
 
+# Node deps (only used by instant-cli; the app itself is buildless)
+node_modules/
+
 # Claude Code local tooling config (preview server, etc.)
 .claude/
