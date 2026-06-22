@@ -81,7 +81,7 @@ async function sendRequest(user) {
       fromName: state.username || state.currentUser.email || "Someone",
       toName: user.username || "",
       createdAt: Date.now(),
-    }));
+    }).link({ from: state.currentUser.id }));
     toast("Friend request sent to " + (user.username || "user"));
   } catch (e) { toast("Couldn't send request — " + (e?.message || "try again")); }
 }

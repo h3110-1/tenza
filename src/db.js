@@ -56,6 +56,13 @@ const schema = i.schema({
       forward: { on: "$users", has: "many", label: "friends" },
       reverse: { on: "$users", has: "many", label: "friendOf" },
     },
+    // Links a request to its sender. Lets the $users.update permission rule
+    // verify a pending invite exists before allowing the accepter to form the
+    // (two-sided) friendship link onto the sender's record.
+    friendReqSender: {
+      forward: { on: "friendRequests", has: "one", label: "from" },
+      reverse: { on: "$users", has: "many", label: "sentRequests" },
+    },
   },
 });
 
