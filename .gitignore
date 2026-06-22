@@ -1,0 +1,7 @@
+# Editor / OS cruft
+.DS_Store
+Thumbs.db
+*.log
+
+# Claude Code local tooling config (preview server, etc.)
+.claude/

@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Anime Tracker</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --panel: #1a1d29;
+    --panel-2: #232735;
+    --border: #2e3344;
+    --text: #e7e9ee;
+    --muted: #9aa0b0;
+    --accent: #7c5cff;
+    --accent-2: #ff5c8a;
+    --star: #ffc83d;
+    --danger: #ff5c5c;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.4;
+  }
+  header {
+    padding: 24px 20px 8px;
+    text-align: center;
+  }
+  header h1 {
+    margin: 0;
+    font-size: 28px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  header p { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
+  .profilebar {
+    display: flex; gap: 8px; align-items: center; justify-content: center;
+    flex-wrap: wrap; margin-top: 14px;
+  }
+  .profilebar .pf-label { color: var(--muted); font-size: 13px; }
+  .profilebar select { min-width: 150px; font-weight: 600; }
+
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px 60px; }
+
+  /* Add bar */
+  .add-bar {
+    position: relative;
+    display: flex;
+    gap: 8px;
+    margin: 20px auto 8px;
+    max-width: 640px;
+  }
+  .add-bar input {
+    flex: 1;
+    padding: 12px 14px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text);
+    font-size: 15px;
+    outline: none;
+  }
+  .add-bar input:focus { border-color: var(--accent); }
+  button {
+    cursor: pointer;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 14px;
+    font-weight: 600;
+    color: white;
+    background: var(--accent);
+    padding: 12px 18px;
+    transition: transform .05s ease, opacity .2s ease;
+  }
+  button:hover { opacity: .9; }
+  button:active { transform: scale(.97); }
+  button.ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-weight: 500;
+    padding: 8px 12px;
+  }
+  button.ghost.active { color: var(--text); border-color: var(--accent); background: var(--panel-2); }
+
+  /* Search results dropdown */
+  .results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 6px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    z-index: 20;
+    box-shadow: 0 12px 40px rgba(0,0,0,.5);
+    max-height: 420px;
+    overflow-y: auto;
+  }
+  .result {
+    display: flex;
+    gap: 12px;
+    padding: 10px 12px;
+    cursor: pointer;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .result:last-child { border-bottom: none; }
+  .result:hover { background: var(--panel-2); }
+  .result img { width: 42px; height: 60px; object-fit: cover; border-radius: 6px; flex-shrink: 0; background: var(--panel-2); }
+  .result .meta { min-width: 0; }
+  .result .meta .t { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .result .meta .s { color: var(--muted); font-size: 12px; }
+  .results .status { padding: 14px; color: var(--muted); font-size: 14px; text-align: center; }
+
+  /* Controls */
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin: 18px 0 4px;
+  }
+  .controls .label { color: var(--muted); font-size: 13px; margin-right: 2px; }
+  .spacer { flex: 1; }
+  select {
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+  .list-filter {
+    flex: 1 1 200px; min-width: 150px; max-width: 320px;
+    padding: 8px 12px; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--panel);
+    color: var(--text); font-size: 13px; outline: none;
+  }
+  .list-filter:focus { border-color: var(--accent); }
+
+  .tagfilter { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 16px; }
+
+  /* Grid */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+    margin-top: 8px;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    transition: border-color .2s ease, box-shadow .2s ease;
+  }
+  .card.dragging { opacity: .4; }
+  .card.dragover { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent) inset; }
+  .card .poster { position: relative; aspect-ratio: 2/3; background: var(--panel-2); }
+  .card .poster img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .rank-badge {
+    position: absolute; top: 8px; left: 8px;
+    background: rgba(0,0,0,.65); backdrop-filter: blur(4px);
+    color: #fff; font-weight: 700; font-size: 13px;
+    width: 28px; height: 28px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .drag-handle {
+    position: absolute; top: 8px; right: 8px;
+    background: rgba(0,0,0,.55); border-radius: 8px;
+    width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+    cursor: grab; color: #fff; font-size: 14px; user-select: none;
+  }
+  .drag-handle:active { cursor: grabbing; }
+  .del {
+    position: absolute; bottom: 8px; right: 8px;
+    background: rgba(0,0,0,.55); border-radius: 8px;
+    width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: #fff; font-size: 16px; opacity: 0; transition: opacity .2s;
+  }
+  .card:hover .del { opacity: 1; }
+  .del:hover { background: var(--danger); }
+
+  .card .body { padding: 12px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .card .title { font-weight: 600; font-size: 14px; }
+  .card .year { color: var(--muted); font-size: 12px; font-weight: 400; }
+
+  /* Status filter pills */
+  .statusfilter { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 0; }
+  .statusfilter .spill {
+    display: inline-flex; align-items: center; gap: 6px;
+    border: 1px solid var(--border); background: var(--panel);
+    color: var(--muted); border-radius: 999px;
+    padding: 5px 11px; font-size: 12px; font-weight: 600; cursor: pointer;
+  }
+  .statusfilter .spill .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .statusfilter .spill .cnt { color: var(--muted); font-weight: 500; }
+  .statusfilter .spill.active { color: var(--text); border-color: var(--text); background: var(--panel-2); }
+
+  /* Per-card status select */
+  .card .status-select {
+    width: 100%; padding: 6px 8px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--panel-2);
+    color: var(--muted); font-size: 12px; font-weight: 600; cursor: pointer;
+    border-left-width: 3px;
+  }
+
+  /* Airing badge on poster */
+  .airing-badge {
+    position: absolute; bottom: 8px; left: 8px;
+    background: rgba(61,220,132,.92); color: #06241a;
+    font-size: 10px; font-weight: 800; letter-spacing: .3px;
+    padding: 3px 7px; border-radius: 7px; display: flex; align-items: center; gap: 4px;
+  }
+  .airing-badge .pulse {
+    width: 6px; height: 6px; border-radius: 50%; background: #06241a;
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity: .35; } 50% { opacity: 1; } }
+  .card .broadcast { font-size: 11px; color: var(--muted); }
+  .card .broadcast .airing-txt { color: #3ddc84; font-weight: 600; }
+
+  .rating-wrap { display: flex; flex-direction: column; gap: 6px; }
+  .rating { display: flex; align-items: center; gap: 8px; }
+  .rating .bars { display: flex; gap: 3px; }
+  .rating .bar {
+    width: 13px; height: 20px; border-radius: 3px;
+    background: #353a4d; cursor: pointer;
+    transition: background .08s ease, transform .08s ease;
+  }
+  .rating .bar:hover { transform: scaleY(1.12); }
+  .rating .bar.on { background: var(--star); }
+  .rating .bar.preview { background: #6b5a2a; }
+  .rating-num {
+    color: var(--muted); font-size: 13px; font-weight: 600;
+    min-width: 42px; text-align: right; font-variant-numeric: tabular-nums;
+  }
+  .rating-num.set { color: var(--star); }
+  .decimal-row .bar { background: #2f3445; }
+  .decimal-row .bar.on { background: var(--accent); }
+  .decimal-row .bar.preview { background: #3f3470; }
+  .dec-num { color: var(--muted); font-size: 12px; min-width: 42px; text-align: right; font-variant-numeric: tabular-nums; }
+  .dec-num.set { color: var(--accent); }
+
+  .tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: auto; }
+  .tag {
+    background: var(--panel-2); border: 1px solid var(--border);
+    border-radius: 999px; padding: 3px 9px; font-size: 11px; color: var(--text);
+    display: inline-flex; align-items: center; gap: 5px; cursor: pointer;
+  }
+  .tag.filter-on { border-color: var(--accent); color: #fff; background: var(--accent); }
+  .tag .x { color: var(--muted); font-weight: 700; }
+  .tag .x:hover { color: var(--danger); }
+  .tag-add {
+    background: transparent; border: 1px dashed var(--border);
+    border-radius: 999px; padding: 3px 9px; font-size: 11px; color: var(--muted); cursor: pointer;
+  }
+  .tag-input {
+    background: var(--panel-2); border: 1px solid var(--accent);
+    border-radius: 999px; padding: 3px 9px; font-size: 11px; color: var(--text);
+    outline: none; width: 90px;
+  }
+
+  #unratedSection { margin-top: 36px; }
+  .section-head {
+    display: flex; align-items: baseline; gap: 10px;
+    padding-top: 20px; margin-bottom: 14px;
+    border-top: 1px solid var(--border);
+  }
+  .section-title { font-size: 15px; font-weight: 700; color: var(--text); }
+  .section-sub { font-size: 12px; color: var(--muted); }
+
+  .empty { text-align: center; color: var(--muted); padding: 60px 20px; font-size: 15px; }
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(0,0,0,.6);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .modal {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px;
+    width: min(380px, 90vw);
+    box-shadow: 0 20px 60px rgba(0,0,0,.6);
+  }
+  .modal-title { font-size: 15px; margin-bottom: 14px; }
+  .modal-input {
+    width: 100%; padding: 10px 12px; margin-bottom: 16px;
+    border-radius: 10px; border: 1px solid var(--border);
+    background: var(--panel-2); color: var(--text); font-size: 14px; outline: none;
+  }
+  .modal-input:focus { border-color: var(--accent); }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
+    padding: 10px 16px; border-radius: 10px; font-size: 13px; z-index: 50;
+    box-shadow: 0 8px 30px rgba(0,0,0,.5); opacity: 0; transition: opacity .25s; pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Anime Tracker</h1>
+    <p>Search a show, tag it, rate it, and drag to rank your favourites.</p>
+    <div class="profilebar">
+      <span class="pf-label">List for</span>
+      <select id="profile" title="Switch person"></select>
+      <button class="ghost" id="newProfile">+ New person</button>
+      <button class="ghost" id="renameProfile">Rename</button>
+      <button class="ghost" id="delProfile">Delete</button>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="add-bar">
+      <input id="search" type="text" placeholder="Type an anime name and press Enter…" autocomplete="off" />
+      <button id="searchBtn">Search</button>
+      <div id="results" class="results" style="display:none"></div>
+    </div>
+
+    <div class="controls">
+      <input id="listFilter" class="list-filter" type="text" placeholder="🔍 Filter this list by title or tag…" autocomplete="off" />
+      <span class="label">Sort by</span>
+      <select id="sort">
+        <option value="manual">My ranking (drag to reorder)</option>
+        <option value="rating">Rating (high → low)</option>
+        <option value="title">Title (A → Z)</option>
+        <option value="added">Recently added</option>
+      </select>
+      <div class="spacer"></div>
+      <span class="label" id="count"></span>
+    </div>
+
+    <div id="statusfilter" class="statusfilter"></div>
+
+    <div id="tagfilter" class="tagfilter"></div>
+
+    <div id="grid" class="grid"></div>
+
+    <div id="unratedSection" style="display:none">
+      <div class="section-head">
+        <span class="section-title">Unrated</span>
+        <span class="section-sub">newly added — give them a score to move them up</span>
+      </div>
+      <div id="unratedGrid" class="grid"></div>
+    </div>
+
+    <div id="empty" class="empty" style="display:none">
+      No shows yet — search for one above to get started. 🎬
+    </div>
+  </div>
+
+  <div id="modal" class="modal-overlay" style="display:none">
+    <div class="modal">
+      <div class="modal-title" id="modalTitle"></div>
+      <input id="modalInput" class="modal-input" type="text" style="display:none" autocomplete="off" />
+      <div class="modal-actions">
+        <button class="ghost" id="modalCancel">Cancel</button>
+        <button id="modalOk">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  const PROFILES_KEY = "animeTracker.profiles";
+  const SHOWS_PREFIX = "animeTracker.shows.";
+  const LEGACY_KEY = "animeTracker.v1"; // single-list format from before profiles
+
+  let profiles = [];       // [{ id, name }]
+  let activeId = null;     // id of the profile currently being viewed
+  let shows = [];          // the active profile's list
+  let sortMode = "manual";
+  let activeTagFilter = null;
+  let listFilter = ""; // free-text filter within the current list
+  let activeStatusFilter = null; // null = all statuses
+
+  // Watch-status options (order = display order)
+  const STATUSES = [
+    { key: "watching",  label: "Watching",      color: "#4ea1ff" },
+    { key: "completed", label: "Completed",     color: "#3ddc84" },
+    { key: "plan",      label: "Plan to watch", color: "#b58cff" },
+    { key: "onhold",    label: "On hold",       color: "#ffc83d" },
+    { key: "dropped",   label: "Dropped",       color: "#ff6b6b" },
+  ];
+  const STATUS_BY_KEY = STATUSES.reduce((m, s) => { m[s.key] = s; return m; }, {});
+
+  const $ = (id) => document.getElementById(id);
+  const searchInput = $("search");
+  const resultsBox = $("results");
+  const grid = $("grid");
+
+  /* ---------- Storage (namespaced per profile) ---------- */
+  // In-memory mirror of every key, so switching profiles works within a
+  // session even when localStorage is blocked (sandboxed previews / private mode).
+  const memStore = {};
+  let storageWarned = false;
+
+  function readJSON(key, fallback) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw != null) return JSON.parse(raw);
+    } catch (e) { /* storage blocked — fall through to the in-memory mirror */ }
+    return key in memStore ? memStore[key] : fallback;
+  }
+  function writeJSON(key, val) {
+    memStore[key] = val;
+    try {
+      localStorage.setItem(key, JSON.stringify(val));
+    } catch (e) {
+      if (!storageWarned) {
+        storageWarned = true;
+        toast("Heads up: this browser is blocking saved storage, so lists won't persist after a reload (but switching between people works fine this session).");
+      }
+    }
+  }
+  function removeKey(key) {
+    delete memStore[key];
+    try { localStorage.removeItem(key); } catch (e) {}
+  }
+
+  function save() { writeJSON(SHOWS_PREFIX + activeId, shows); }
+  function saveProfiles() { writeJSON(PROFILES_KEY, { profiles: profiles, activeId: activeId }); }
+  function loadShows() { shows = readJSON(SHOWS_PREFIX + activeId, []); }
+
+  function initProfiles() {
+    const meta = readJSON(PROFILES_KEY, null);
+    if (meta && Array.isArray(meta.profiles) && meta.profiles.length) {
+      profiles = meta.profiles;
+      activeId = profiles.some((p) => p.id === meta.activeId) ? meta.activeId : profiles[0].id;
+    } else {
+      // First run: create a default profile, migrating any pre-profiles list.
+      const first = { id: uid(), name: "Me" };
+      profiles = [first];
+      activeId = first.id;
+      const legacy = readJSON(LEGACY_KEY, null);
+      if (Array.isArray(legacy) && legacy.length) writeJSON(SHOWS_PREFIX + first.id, legacy);
+      saveProfiles();
+    }
+    loadShows();
+  }
+
+  function renderProfiles() {
+    const sel = $("profile");
+    sel.innerHTML = "";
+    profiles.forEach((p) => {
+      const o = document.createElement("option");
+      o.value = p.id;
+      o.textContent = p.name;
+      if (p.id === activeId) o.selected = true;
+      sel.appendChild(o);
+    });
+    $("delProfile").disabled = profiles.length <= 1;
+  }
+
+  function switchProfile(id) {
+    if (id === activeId) return;
+    activeId = id;
+    activeTagFilter = null;
+    saveProfiles();
+    loadShows();
+    render();
+  }
+
+  async function addProfile() {
+    const name = ((await askText("Name for the new list (e.g. a person's name):", "", "Create")) || "").trim();
+    if (!name) return;
+    const p = { id: uid(), name: name };
+    profiles.push(p);
+    activeId = p.id;
+    activeTagFilter = null;
+    shows = [];
+    saveProfiles();
+    save();
+    render();
+    toast("Created list for " + name);
+  }
+
+  async function renameProfile() {
+    const p = profiles.find((x) => x.id === activeId);
+    if (!p) return;
+    const name = ((await askText("Rename this list:", p.name, "Rename")) || "").trim();
+    if (!name) return;
+    p.name = name;
+    saveProfiles();
+    renderProfiles();
+    toast("Renamed to " + name);
+  }
+
+  async function deleteProfile() {
+    if (profiles.length <= 1) { toast("You need at least one list."); return; }
+    const p = profiles.find((x) => x.id === activeId);
+    if (!p) return;
+    const ok = await askConfirm('Delete the list for "' + p.name + '" and all of its shows? This cannot be undone.', "Delete");
+    if (!ok) return;
+    removeKey(SHOWS_PREFIX + activeId);
+    profiles = profiles.filter((x) => x.id !== activeId);
+    activeId = profiles[0].id;
+    activeTagFilter = null;
+    saveProfiles();
+    loadShows();
+    render();
+    toast('Deleted "' + p.name + '"');
+  }
+
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+  let toastTimer;
+  function toast(msg) {
+    const t = $("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove("show"), 2200);
+  }
+
+  /* ---------- In-app dialogs (native prompt/confirm are blocked in sandboxed previews) ---------- */
+  function showModal(opts) {
+    return new Promise((resolve) => {
+      const overlay = $("modal");
+      const input = $("modalInput");
+      const ok = $("modalOk");
+      const cancel = $("modalCancel");
+      $("modalTitle").textContent = opts.title;
+      input.style.display = opts.withInput ? "block" : "none";
+      input.value = opts.defaultValue || "";
+      ok.textContent = opts.okLabel || "OK";
+      overlay.style.display = "flex";
+      if (opts.withInput) setTimeout(() => { input.focus(); input.select(); }, 0);
+
+      function done(result) {
+        overlay.style.display = "none";
+        ok.onclick = cancel.onclick = overlay.onclick = input.onkeydown = null;
+        resolve(result);
+      }
+      ok.onclick = () => done(opts.withInput ? input.value : true);
+      cancel.onclick = () => done(opts.withInput ? null : false);
+      input.onkeydown = (e) => {
+        if (e.key === "Enter") done(input.value);
+        else if (e.key === "Escape") done(null);
+      };
+      overlay.onclick = (e) => { if (e.target === overlay) done(opts.withInput ? null : false); };
+    });
+  }
+  const askText = (title, defaultValue, okLabel) =>
+    showModal({ title: title, withInput: true, defaultValue: defaultValue, okLabel: okLabel });
+  const askConfirm = (title, okLabel) =>
+    showModal({ title: title, withInput: false, okLabel: okLabel });
+
+  /* ---------- Jikan search ---------- */
+  // Popular fan abbreviations → a full title Jikan understands.
+  // Keys are normalised (lowercase, no spaces/punctuation) before lookup.
+  const ABBREVIATIONS = {
+    jjk: "Jujutsu Kaisen",
+    mha: "My Hero Academia", bnha: "My Hero Academia",
+    aot: "Attack on Titan", snk: "Shingeki no Kyojin",
+    kny: "Kimetsu no Yaiba", ds: "Demon Slayer",
+    fmab: "Fullmetal Alchemist Brotherhood", fma: "Fullmetal Alchemist",
+    op: "One Piece", opm: "One Punch Man",
+    hxh: "Hunter x Hunter",
+    jjba: "JoJo's Bizarre Adventure", jojo: "JoJo's Bizarre Adventure",
+    csm: "Chainsaw Man",
+    sxf: "Spy x Family", spyxfamily: "Spy x Family",
+    sao: "Sword Art Online", ggo: "Sword Art Online Alternative Gun Gale Online",
+    cg: "Code Geass",
+    tpn: "The Promised Neverland",
+    eva: "Neon Genesis Evangelion", nge: "Neon Genesis Evangelion",
+    re0: "Re:Zero", rezero: "Re:Zero",
+    sg: "Steins Gate", steinsgate: "Steins Gate",
+    mp100: "Mob Psycho 100", mob: "Mob Psycho 100",
+    drstone: "Dr. Stone",
+    bsd: "Bungo Stray Dogs",
+    dbz: "Dragon Ball Z", dbs: "Dragon Ball Super", db: "Dragon Ball",
+    hq: "Haikyuu", haikyu: "Haikyuu",
+    ttgl: "Tengen Toppa Gurren Lagann", gurrenlagann: "Tengen Toppa Gurren Lagann",
+    klk: "Kill la Kill",
+    kaguya: "Kaguya-sama Love is War",
+    oregairu: "My Teen Romantic Comedy SNAFU", snafu: "My Teen Romantic Comedy SNAFU",
+    tensura: "That Time I Got Reincarnated as a Slime", slime: "That Time I Got Reincarnated as a Slime",
+    mt: "Mushoku Tensei", mushoku: "Mushoku Tensei",
+    danmachi: "Is It Wrong to Try to Pick Up Girls in a Dungeon",
+    "86": "86 Eighty Six",
+    tg: "Tokyo Ghoul",
+    pp: "Psycho-Pass",
+    ditf: "Darling in the Franxx",
+    "7ds": "The Seven Deadly Sins", nanatsu: "The Seven Deadly Sins",
+    bocchi: "Bocchi the Rock", btr: "Bocchi the Rock",
+    ygo: "Yu-Gi-Oh",
+    gits: "Ghost in the Shell",
+    pmmm: "Puella Magi Madoka Magica", madoka: "Puella Magi Madoka Magica",
+    konosuba: "KonoSuba",
+    tatenoyuusha: "The Rising of the Shield Hero", shieldhero: "The Rising of the Shield Hero",
+    erased: "Boku dake ga Inai Machi",
+    kon: "K-On",
+    vinland: "Vinland Saga",
+    bunnygirl: "Rascal Does Not Dream of Bunny Girl Senpai",
+    ac: "Assassination Classroom",
+  };
+  function expandQuery(q) {
+    const key = q.toLowerCase().replace(/[\s.\-:!']/g, "");
+    return ABBREVIATIONS[key] || q;
+  }
+
+  let searchTimer;
+  let currentResults = [];   // results currently shown in the dropdown
+  let resultsQuery = "";     // the query those results belong to
+
+  async function runSearch() {
+    const q = searchInput.value.trim();
+    if (!q) { resultsBox.style.display = "none"; currentResults = []; return; }
+    resultsBox.style.display = "block";
+    resultsBox.innerHTML = '<div class="status">Searching…</div>';
+    try {
+      const term = expandQuery(q);
+      const res = await fetch(
+        "https://api.jikan.moe/v4/anime?sfw&limit=8&q=" + encodeURIComponent(term)
+      );
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const json = await res.json();
+      currentResults = json.data || [];
+      resultsQuery = q;
+      renderResults(currentResults);
+    } catch (e) {
+      currentResults = [];
+      resultsBox.innerHTML = '<div class="status">Search failed — check your connection and try again.</div>';
+    }
+  }
+
+  // Add the first result, fetching it first if the dropdown isn't current.
+  async function addTopResult() {
+    const q = searchInput.value.trim();
+    if (!q) return;
+    if (!(currentResults.length && resultsQuery === q)) await runSearch();
+    if (currentResults.length) addShow(currentResults[0]);
+    else toast("No results to add — try a different name");
+  }
+
+  function renderResults(list) {
+    if (!list.length) {
+      resultsBox.innerHTML = '<div class="status">No results found.</div>';
+      return;
+    }
+    resultsBox.innerHTML = "";
+    list.forEach((a) => {
+      const img = (a.images && a.images.jpg && a.images.jpg.image_url) || "";
+      const title = a.title_english || a.title || "Untitled";
+      const year = a.year || (a.aired && a.aired.prop && a.aired.prop.from && a.aired.prop.from.year) || "";
+      const type = a.type || "";
+      const el = document.createElement("div");
+      el.className = "result";
+      el.innerHTML =
+        '<img src="' + img + '" alt="" onerror="this.style.visibility=\'hidden\'"/>' +
+        '<div class="meta"><div class="t"></div><div class="s"></div></div>';
+      el.querySelector(".t").textContent = title;
+      el.querySelector(".s").textContent = [type, year].filter(Boolean).join(" · ");
+      el.addEventListener("click", () => addShow(a));
+      resultsBox.appendChild(el);
+    });
+  }
+
+  // Build tags from Jikan's classification fields (genres, themes, demographics).
+  function autoTags(a) {
+    const tags = [];
+    [a.genres, a.themes, a.demographics].forEach((group) => {
+      if (Array.isArray(group)) {
+        group.forEach((item) => {
+          const name = ((item && item.name) || "").trim().toLowerCase();
+          if (name && !tags.includes(name)) tags.push(name);
+        });
+      }
+    });
+    return tags;
+  }
+
+  function addShow(a) {
+    const title = a.title_english || a.title || "Untitled";
+    if (a.mal_id && shows.some((s) => s.malId === a.mal_id)) {
+      toast(title + " is already in your list");
+      return;
+    }
+    const tags = autoTags(a);
+    shows.push({
+      id: uid(),
+      malId: a.mal_id || null,
+      title: title,
+      imageUrl: (a.images && a.images.jpg && (a.images.jpg.large_image_url || a.images.jpg.image_url)) || "",
+      year: a.year || (a.aired && a.aired.prop && a.aired.prop.from && a.aired.prop.from.year) || "",
+      rating: 0,
+      tags: tags,
+      added: Date.now(),
+      // Watch tracking
+      status: "",                                  // "" | watching | completed | plan | onhold | dropped
+      airing: !!a.airing,                          // currently broadcasting?
+      airStatus: a.status || "",                   // "Currently Airing" / "Finished Airing" / "Not yet aired"
+      broadcast: (a.broadcast && a.broadcast.string) || "", // e.g. "Saturdays at 23:00 (JST)"
+    });
+    save();
+    searchInput.value = "";
+    resultsBox.style.display = "none";
+    currentResults = [];
+    resultsQuery = "";
+    render();
+    toast("Added " + title + (tags.length ? " · " + tags.length + " tags" : ""));
+  }
+
+  /* ---------- Rendering the collection ---------- */
+  function allTags() {
+    const set = new Set();
+    shows.forEach((s) => s.tags.forEach((t) => set.add(t)));
+    return [...set].sort((a, b) => a.localeCompare(b));
+  }
+
+  function sortedShows() {
+    let list = shows.slice();
+    if (activeStatusFilter) list = list.filter((s) => s.status === activeStatusFilter);
+    if (activeTagFilter) list = list.filter((s) => s.tags.includes(activeTagFilter));
+    if (listFilter) {
+      const q = listFilter.toLowerCase();
+      const expanded = expandQuery(listFilter).toLowerCase(); // e.g. "jjk" -> "jujutsu kaisen"
+      const terms = expanded === q ? [q] : [q, expanded];
+      list = list.filter((s) => {
+        const hay = (s.title + " " + s.tags.join(" ")).toLowerCase();
+        return terms.some((t) => hay.includes(t));
+      });
+    }
+    if (sortMode === "rating") list.sort((a, b) => b.rating - a.rating);
+    else if (sortMode === "title") list.sort((a, b) => a.title.localeCompare(b.title));
+    else if (sortMode === "added") list.sort((a, b) => b.added - a.added);
+    return list; // "manual" keeps array order
+  }
+
+  function renderStatusFilter() {
+    const box = $("statusfilter");
+    box.innerHTML = "";
+    // No statuses set anywhere yet → hide the bar entirely.
+    if (!shows.some((s) => s.status)) return;
+
+    const counts = {};
+    shows.forEach((s) => { if (s.status) counts[s.status] = (counts[s.status] || 0) + 1; });
+
+    const makePill = (key, label, color, count, active) => {
+      const b = document.createElement("button");
+      b.className = "spill" + (active ? " active" : "");
+      const dot = color ? '<span class="dot" style="background:' + color + '"></span>' : "";
+      b.innerHTML = dot + label + ' <span class="cnt">' + count + "</span>";
+      b.onclick = () => {
+        activeStatusFilter = active ? null : key;
+        render();
+      };
+      return b;
+    };
+
+    box.appendChild(makePill(null, "All", "", shows.length, !activeStatusFilter));
+    STATUSES.forEach((st) => {
+      if (counts[st.key]) {
+        box.appendChild(makePill(st.key, st.label, st.color, counts[st.key], activeStatusFilter === st.key));
+      }
+    });
+  }
+
+  function renderTagFilter() {
+    const box = $("tagfilter");
+    box.innerHTML = "";
+    const tags = allTags();
+    if (!tags.length) return;
+    tags.forEach((t) => {
+      const b = document.createElement("button");
+      b.className = "ghost" + (activeTagFilter === t ? " active" : "");
+      b.textContent = "#" + t;
+      b.onclick = () => { activeTagFilter = activeTagFilter === t ? null : t; render(); };
+      box.appendChild(b);
+    });
+    if (activeTagFilter) {
+      const clear = document.createElement("button");
+      clear.className = "ghost";
+      clear.textContent = "Clear filter ✕";
+      clear.onclick = () => { activeTagFilter = null; render(); };
+      box.appendChild(clear);
+    }
+  }
+
+  function render() {
+    renderProfiles();
+    renderStatusFilter();
+    renderTagFilter();
+    const list = sortedShows();
+    const rated = list.filter((s) => s.rating > 0);
+    const unrated = list.filter((s) => !s.rating);
+
+    const total = shows.length;
+    const shown = rated.length + unrated.length;
+    const filtering = !!(listFilter || activeTagFilter || activeStatusFilter);
+    $("count").textContent = filtering && shown < total
+      ? shown + " of " + total + " shown"
+      : total + (total === 1 ? " show" : " shows");
+
+    const empty = $("empty");
+    if (total === 0) {
+      empty.style.display = "block";
+      empty.textContent = "No shows yet — search for one above to get started. 🎬";
+    } else if (shown === 0) {
+      empty.style.display = "block";
+      empty.textContent = "No shows match your filter.";
+    } else {
+      empty.style.display = "none";
+    }
+
+    // Rated / ranked list
+    grid.innerHTML = "";
+    const showRanks = sortMode === "manual" && !activeTagFilter && !listFilter;
+    rated.forEach((s, i) => grid.appendChild(card(s, showRanks ? i + 1 : null)));
+
+    // Unrated list (newly added), separated below
+    const uGrid = $("unratedGrid");
+    uGrid.innerHTML = "";
+    $("unratedSection").style.display = unrated.length ? "block" : "none";
+    unrated.forEach((s) => uGrid.appendChild(card(s, null)));
+  }
+
+  function card(s, rank) {
+    const el = document.createElement("div");
+    el.className = "card";
+    el.dataset.id = s.id;
+
+    // Poster
+    const poster = document.createElement("div");
+    poster.className = "poster";
+    poster.innerHTML =
+      (s.imageUrl ? '<img src="' + s.imageUrl + '" alt="" onerror="this.style.display=\'none\'"/>' : "") +
+      (rank != null ? '<div class="rank-badge">' + rank + "</div>" : "") +
+      (rank != null ? '<div class="drag-handle" title="Drag to reorder">⠿</div>' : "") +
+      (s.airing ? '<div class="airing-badge"><span class="pulse"></span>AIRING</div>' : "") +
+      '<div class="del" title="Remove">✕</div>';
+    poster.querySelector(".del").onclick = async () => {
+      if (await askConfirm("Remove “" + s.title + "” from your list?", "Remove")) {
+        shows = shows.filter((x) => x.id !== s.id);
+        save(); render();
+      }
+    };
+
+    // Body
+    const body = document.createElement("div");
+    body.className = "body";
+
+    const title = document.createElement("div");
+    title.className = "title";
+    title.textContent = s.title;
+    if (s.year) {
+      const y = document.createElement("span");
+      y.className = "year";
+      y.textContent = "  (" + s.year + ")";
+      title.appendChild(y);
+    }
+
+    const rating = buildRating(s);
+
+    const tags = document.createElement("div");
+    tags.className = "tags";
+    renderCardTags(tags, s);
+
+    body.appendChild(title);
+    body.appendChild(buildStatusSelect(s));
+    const broadcast = buildBroadcast(s);
+    if (broadcast) body.appendChild(broadcast);
+    body.appendChild(rating);
+    body.appendChild(tags);
+
+    el.appendChild(poster);
+    el.appendChild(body);
+
+    setupDrag(el, s);
+    return el;
+  }
+
+  function buildStatusSelect(s) {
+    const sel = document.createElement("select");
+    sel.className = "status-select";
+    [{ key: "", label: "▾ Set status" }].concat(STATUSES).forEach((o) => {
+      const opt = document.createElement("option");
+      opt.value = o.key;
+      opt.textContent = o.label;
+      if ((s.status || "") === o.key) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    const applyColor = () => {
+      const st = STATUS_BY_KEY[s.status];
+      sel.style.borderLeftColor = st ? st.color : "var(--border)";
+      sel.style.color = st ? st.color : "var(--muted)";
+    };
+    applyColor();
+    sel.onchange = () => {
+      s.status = sel.value;
+      save();
+      render(); // status change can affect filter membership and the counts
+    };
+    return sel;
+  }
+
+  function buildBroadcast(s) {
+    if (!s.airing) return null;
+    const el = document.createElement("div");
+    el.className = "broadcast";
+    const span = document.createElement("span");
+    span.className = "airing-txt";
+    span.textContent = s.broadcast ? "Airs " + s.broadcast : "Currently airing";
+    el.appendChild(span);
+    return el;
+  }
+
+  // 1–10 rating: a row of 10 bars for the whole number, plus an identical
+  // row directly below for the decimal (tenths), giving scores like 7.4.
+  function buildRating(s) {
+    const wrap = document.createElement("div");
+    wrap.className = "rating-wrap";
+
+    // Row 1 — whole number (1–10)
+    const row1 = document.createElement("div");
+    row1.className = "rating";
+    const bars = document.createElement("div");
+    bars.className = "bars";
+    const num = document.createElement("span");
+    num.className = "rating-num";
+    row1.appendChild(bars);
+    row1.appendChild(num);
+
+    // Row 2 — decimal (.0–.9), identical control directly below
+    const row2 = document.createElement("div");
+    row2.className = "rating decimal-row";
+    const decBars = document.createElement("div");
+    decBars.className = "bars";
+    const decNum = document.createElement("span");
+    decNum.className = "dec-num";
+    row2.appendChild(decBars);
+    row2.appendChild(decNum);
+
+    const whole = () => Math.floor(s.rating);
+    const digit = () => Math.round((s.rating - whole()) * 10);
+    const fmt = (v) => (Number.isInteger(v) ? v + "" : v.toFixed(1));
+
+    // pWhole / pDigit are hover-preview values (null = use the saved rating)
+    function paint(pWhole, pDigit) {
+      const w = pWhole != null ? pWhole : whole();
+      const d = pDigit != null ? pDigit : digit();
+
+      [...bars.children].forEach((bar, idx) => {
+        bar.classList.toggle("on", pWhole == null && idx < whole());
+        bar.classList.toggle("preview", pWhole != null && idx < pWhole);
+      });
+      [...decBars.children].forEach((bar, idx) => {
+        bar.classList.toggle("on", pDigit == null && idx <= digit());
+        bar.classList.toggle("preview", pDigit != null && idx <= pDigit);
+      });
+
+      // Decimal row only makes sense for scores 1–9 (10 is the max, no .x).
+      row2.style.display = whole() >= 1 && whole() < 10 ? "flex" : "none";
+
+      const previewing = pWhole != null || pDigit != null;
+      const shown = previewing ? w + (whole() < 10 ? d / 10 : 0) : s.rating;
+      num.textContent = s.rating || previewing ? fmt(shown) + "/10" : "—";
+      num.classList.toggle("set", s.rating > 0);
+      decNum.textContent = "." + d;
+      decNum.classList.toggle("set", s.rating > 0);
+    }
+
+    for (let i = 1; i <= 10; i++) {
+      const bar = document.createElement("div");
+      bar.className = "bar";
+      bar.title = "Rate " + i;
+      bar.onmouseenter = () => paint(i, null);
+      bar.onclick = () => {
+        const wasRated = s.rating > 0;
+        if (i === whole() && digit() === 0) s.rating = 0;           // click current score again to clear
+        else s.rating = i === 10 ? 10 : i + digit() / 10;           // keep the decimal when changing the whole part
+        save();
+        // Moving in or out of "rated" shifts the card between sections, so re-render.
+        if (wasRated !== s.rating > 0) render();
+        else paint();
+      };
+      bars.appendChild(bar);
+    }
+    bars.onmouseleave = () => paint();
+
+    for (let k = 0; k <= 9; k++) {
+      const bar = document.createElement("div");
+      bar.className = "bar";
+      bar.title = "Decimal ." + k;
+      bar.onmouseenter = () => paint(null, k);
+      bar.onclick = () => {
+        s.rating = whole() + k / 10;
+        save();
+        paint();
+      };
+      decBars.appendChild(bar);
+    }
+    decBars.onmouseleave = () => paint();
+
+    wrap.appendChild(row1);
+    wrap.appendChild(row2);
+    paint();
+    return wrap;
+  }
+
+  function renderCardTags(container, s) {
+    container.innerHTML = "";
+    s.tags.forEach((t) => {
+      const chip = document.createElement("span");
+      chip.className = "tag" + (activeTagFilter === t ? " filter-on" : "");
+      const label = document.createElement("span");
+      label.textContent = "#" + t;
+      label.onclick = () => { activeTagFilter = activeTagFilter === t ? null : t; render(); };
+      const x = document.createElement("span");
+      x.className = "x";
+      x.textContent = "✕";
+      x.onclick = (e) => {
+        e.stopPropagation();
+        s.tags = s.tags.filter((tag) => tag !== t);
+        save(); render();
+      };
+      chip.appendChild(label);
+      chip.appendChild(x);
+      container.appendChild(chip);
+    });
+
+    const addBtn = document.createElement("span");
+    addBtn.className = "tag-add";
+    addBtn.textContent = "+ tag";
+    addBtn.onclick = () => {
+      const input = document.createElement("input");
+      input.className = "tag-input";
+      input.placeholder = "tag…";
+      const commit = () => {
+        const val = input.value.trim().toLowerCase().replace(/^#/, "");
+        if (val && !s.tags.includes(val)) { s.tags.push(val); save(); }
+        render();
+      };
+      input.onkeydown = (e) => {
+        if (e.key === "Enter") commit();
+        else if (e.key === "Escape") render();
+      };
+      input.onblur = commit;
+      container.replaceChild(input, addBtn);
+      input.focus();
+    };
+    container.appendChild(addBtn);
+  }
+
+  /* ---------- Drag to reorder (manual ranking) ---------- */
+  let dragId = null;
+  function setupDrag(el, s) {
+    const handle = el.querySelector(".drag-handle");
+    if (!handle) return; // unrated cards have no rank/handle and aren't reorderable
+    handle.draggable = true;
+
+    handle.addEventListener("dragstart", (e) => {
+      if (sortMode !== "manual" || activeTagFilter) {
+        e.preventDefault();
+        toast("Switch sort to “My ranking” and clear filters to reorder");
+        return;
+      }
+      dragId = s.id;
+      el.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+    });
+    handle.addEventListener("dragend", () => {
+      el.classList.remove("dragging");
+      dragId = null;
+    });
+
+    el.addEventListener("dragover", (e) => {
+      if (!dragId || dragId === s.id) return;
+      e.preventDefault();
+      el.classList.add("dragover");
+    });
+    el.addEventListener("dragleave", () => el.classList.remove("dragover"));
+    el.addEventListener("drop", (e) => {
+      e.preventDefault();
+      el.classList.remove("dragover");
+      if (!dragId || dragId === s.id) return;
+      const from = shows.findIndex((x) => x.id === dragId);
+      const to = shows.findIndex((x) => x.id === s.id);
+      if (from < 0 || to < 0) return;
+      const [moved] = shows.splice(from, 1);
+      shows.splice(to, 0, moved);
+      save(); render();
+    });
+  }
+
+  /* ---------- Events ---------- */
+  searchInput.addEventListener("input", () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(runSearch, 400); // debounce; Jikan rate-limits
+  });
+  searchInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); clearTimeout(searchTimer); addTopResult(); }
+    if (e.key === "Escape") resultsBox.style.display = "none";
+  });
+  $("searchBtn").addEventListener("click", () => { clearTimeout(searchTimer); runSearch(); });
+
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".add-bar")) resultsBox.style.display = "none";
+  });
+
+  $("sort").addEventListener("change", (e) => { sortMode = e.target.value; render(); });
+
+  $("listFilter").addEventListener("input", (e) => { listFilter = e.target.value.trim(); render(); });
+
+  $("profile").addEventListener("change", (e) => switchProfile(e.target.value));
+  $("newProfile").addEventListener("click", addProfile);
+  $("renameProfile").addEventListener("click", renameProfile);
+  $("delProfile").addEventListener("click", deleteProfile);
+
+  initProfiles();
+  render();
+})();
+</script>
+</body>
+</html>
