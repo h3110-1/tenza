@@ -1,5 +1,7 @@
 # Tenza
 
+> Search a show, tag it, rate it, and drag to rank your favourites.
+
 A lightweight web app for tracking, tagging, rating, and ranking your favourite anime. It's a single self-contained HTML file — no build step, no server, no install. Just open it in a browser.
 
 ## Features
