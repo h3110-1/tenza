@@ -171,21 +171,24 @@ function resetFilters() {
 /* ---------- Search ---------- */
 async function searchUsers(term) {
   const box = $("friendSearchResults");
-  term = term.trim();
-  if (!term) { box.innerHTML = ""; return; }
+  const q = term.trim().toLowerCase();
+  if (!q) { box.innerHTML = ""; return; }
   box.innerHTML = '<div class="friend-empty">Searching…</div>';
+  // Fetch profiles and match client-side. (We avoid the $ilike operator because
+  // it needs a server-side index, which only exists after a CLI schema push.)
   let rows = [];
   try {
     rows = await new Promise((resolve) => {
       let done = false;
       const u = db.subscribeQuery(
-        { profiles: { $: { where: { username: { $ilike: "%" + term + "%" } }, limit: 12 } } },
+        { profiles: {} },
         (r) => { if (done) return; done = true; resolve(r.error ? [] : (r.data?.profiles || [])); try { u(); } catch (e) {} }
       );
       setTimeout(() => { if (!done) { done = true; resolve([]); } }, 5000);
     });
   } catch (e) { rows = []; }
-  renderSearchResults(rows);
+  const matches = rows.filter((p) => (p.username || "").toLowerCase().includes(q)).slice(0, 20);
+  renderSearchResults(matches);
 }
 
 function renderSearchResults(rows) {
