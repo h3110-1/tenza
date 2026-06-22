@@ -1,0 +1,53 @@
+// Popular fan abbreviations → a full title Jikan understands.
+// Keys are normalised (lowercase, no spaces/punctuation) before lookup.
+export const ABBREVIATIONS = {
+  jjk: "Jujutsu Kaisen",
+  mha: "My Hero Academia", bnha: "My Hero Academia",
+  aot: "Attack on Titan", snk: "Shingeki no Kyojin",
+  kny: "Kimetsu no Yaiba", ds: "Demon Slayer",
+  fmab: "Fullmetal Alchemist Brotherhood", fma: "Fullmetal Alchemist",
+  op: "One Piece", opm: "One Punch Man",
+  hxh: "Hunter x Hunter",
+  jjba: "JoJo's Bizarre Adventure", jojo: "JoJo's Bizarre Adventure",
+  csm: "Chainsaw Man",
+  sxf: "Spy x Family", spyxfamily: "Spy x Family",
+  sao: "Sword Art Online", ggo: "Sword Art Online Alternative Gun Gale Online",
+  cg: "Code Geass",
+  tpn: "The Promised Neverland",
+  eva: "Neon Genesis Evangelion", nge: "Neon Genesis Evangelion",
+  re0: "Re:Zero", rezero: "Re:Zero",
+  sg: "Steins Gate", steinsgate: "Steins Gate",
+  mp100: "Mob Psycho 100", mob: "Mob Psycho 100",
+  drstone: "Dr. Stone",
+  bsd: "Bungo Stray Dogs",
+  dbz: "Dragon Ball Z", dbs: "Dragon Ball Super", db: "Dragon Ball",
+  hq: "Haikyuu", haikyu: "Haikyuu",
+  ttgl: "Tengen Toppa Gurren Lagann", gurrenlagann: "Tengen Toppa Gurren Lagann",
+  klk: "Kill la Kill",
+  kaguya: "Kaguya-sama Love is War",
+  oregairu: "My Teen Romantic Comedy SNAFU", snafu: "My Teen Romantic Comedy SNAFU",
+  tensura: "That Time I Got Reincarnated as a Slime", slime: "That Time I Got Reincarnated as a Slime",
+  mt: "Mushoku Tensei", mushoku: "Mushoku Tensei",
+  danmachi: "Is It Wrong to Try to Pick Up Girls in a Dungeon",
+  "86": "86 Eighty Six",
+  tg: "Tokyo Ghoul",
+  pp: "Psycho-Pass",
+  ditf: "Darling in the Franxx",
+  "7ds": "The Seven Deadly Sins", nanatsu: "The Seven Deadly Sins",
+  bocchi: "Bocchi the Rock", btr: "Bocchi the Rock",
+  ygo: "Yu-Gi-Oh",
+  gits: "Ghost in the Shell",
+  pmmm: "Puella Magi Madoka Magica", madoka: "Puella Magi Madoka Magica",
+  konosuba: "KonoSuba",
+  tatenoyuusha: "The Rising of the Shield Hero", shieldhero: "The Rising of the Shield Hero",
+  erased: "Boku dake ga Inai Machi",
+  kon: "K-On",
+  vinland: "Vinland Saga",
+  bunnygirl: "Rascal Does Not Dream of Bunny Girl Senpai",
+  ac: "Assassination Classroom",
+};
+
+export function expandQuery(q) {
+  const key = q.toLowerCase().replace(/[\s.\-:!']/g, "");
+  return ABBREVIATIONS[key] || q;
+}
