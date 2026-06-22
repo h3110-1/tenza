@@ -446,3 +446,5 @@ select {
   font-variant-numeric: tabular-nums; min-width: 54px; text-align: right;
 }
 .compare-rating.set { color: var(--star); }
+.friend-row.is-me { border-color: var(--accent); background: var(--panel); }
+.friend-row.is-me .friend-name { color: var(--accent); }

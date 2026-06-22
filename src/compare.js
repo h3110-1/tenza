@@ -50,16 +50,22 @@ function renderMatches(rows) {
   const myId = state.currentUser ? state.currentUser.id : null;
   const nameById = new Map(state.friends.map((f) => [f.id, f.username]));
 
-  const matches = rows
-    .filter((r) => r.ownerId && r.ownerId !== myId && nameById.has(r.ownerId))
+  const mapped = rows
+    .filter((r) => r.ownerId && (r.ownerId === myId || nameById.has(r.ownerId)))
     .map((r) => ({
-      username: nameById.get(r.ownerId),
+      isMe: r.ownerId === myId,
+      username: r.ownerId === myId ? "You" : nameById.get(r.ownerId),
       status: r.status || "",
       rating: typeof r.rating === "number" ? r.rating : 0,
-    }))
+    }));
+
+  // Your own copy is pinned at the top as a reference; friends follow, ranked.
+  const me = mapped.find((m) => m.isMe) || null;
+  const friends = mapped
+    .filter((m) => !m.isMe)
     .sort((a, b) => b.rating - a.rating || a.username.localeCompare(b.username));
 
-  if (!matches.length) {
+  if (!me && !friends.length) {
     body.innerHTML = '<div class="friend-empty">' +
       (state.friends.length
         ? "None of your friends have this on their list yet."
@@ -71,14 +77,18 @@ function renderMatches(rows) {
   body.innerHTML = "";
   const count = document.createElement("div");
   count.className = "compare-count";
-  count.textContent = matches.length + (matches.length === 1 ? " friend has this" : " friends have this");
+  count.textContent = friends.length
+    ? friends.length + (friends.length === 1 ? " friend has this" : " friends have this")
+    : "None of your friends have this yet";
   body.appendChild(count);
-  matches.forEach((m) => body.appendChild(matchRow(m)));
+
+  if (me) body.appendChild(matchRow(me));
+  friends.forEach((m) => body.appendChild(matchRow(m)));
 }
 
 function matchRow(m) {
   const row = document.createElement("div");
-  row.className = "friend-row";
+  row.className = "friend-row" + (m.isMe ? " is-me" : "");
 
   const name = document.createElement("span");
   name.className = "friend-name";
