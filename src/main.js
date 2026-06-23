@@ -44,30 +44,45 @@ $("tagfilterToggle").addEventListener("click", () => {
 
 /* ---------- Settings menu (device prefs, not user data) ---------- */
 const PER_ROW_KEY = "animeTracker.perRow";
-const PER_ROW_CHOICES = [2, 3, 4, 5, 6];
+// Phones get a tighter range (1–3); the cards are too narrow for more.
+const phoneMq = window.matchMedia("(max-width: 600px)");
+const DESKTOP_PER_ROW = [2, 3, 4, 5, 6];
+const MOBILE_PER_ROW = [1, 2, 3];
 const settingsBtn = $("settingsBtn");
 const settingsMenu = $("settingsMenu");
 const perRowChoices = $("perRowChoices");
 
-let perRow = readJSON(PER_ROW_KEY, 4);
-if (!PER_ROW_CHOICES.includes(perRow)) perRow = 4;
+const perRowChoicesFor = () => (phoneMq.matches ? MOBILE_PER_ROW : DESKTOP_PER_ROW);
+let perRow = readJSON(PER_ROW_KEY, phoneMq.matches ? 2 : 4);
 
 function applyPerRow(n) {
+  const allowed = perRowChoicesFor();
+  if (!allowed.includes(n)) n = phoneMq.matches ? Math.min(n, 3) : 4;
+  if (!allowed.includes(n)) n = allowed[allowed.length - 1];
   perRow = n;
   document.documentElement.style.setProperty("--cards-per-row", String(n));
-  // Cards get narrow at 4+ per row — stack the rating bars vertically so the
-  // score doesn't get clipped.
-  document.body.classList.toggle("vertical-rating", n >= 4);
+  // Stack the rating bars vertically once the cards get narrow — from 2 per
+  // row on phones, 4 on larger screens — so the score doesn't get clipped.
+  // At the tightest phone layout (3 per row) the bars also go thinner.
+  const verticalFrom = phoneMq.matches ? 2 : 4;
+  document.body.classList.toggle("vertical-rating", n >= verticalFrom);
+  document.body.classList.toggle("thin-rating", phoneMq.matches && n >= 3);
   for (const b of perRowChoices.children) b.classList.toggle("active", Number(b.dataset.n) === n);
 }
-PER_ROW_CHOICES.forEach((n) => {
-  const b = document.createElement("button");
-  b.textContent = String(n);
-  b.dataset.n = n;
-  b.onclick = () => { applyPerRow(n); writeJSON(PER_ROW_KEY, n); };
-  perRowChoices.appendChild(b);
-});
+function buildPerRowButtons() {
+  perRowChoices.innerHTML = "";
+  perRowChoicesFor().forEach((n) => {
+    const b = document.createElement("button");
+    b.textContent = String(n);
+    b.dataset.n = n;
+    b.onclick = () => { applyPerRow(n); writeJSON(PER_ROW_KEY, n); };
+    perRowChoices.appendChild(b);
+  });
+}
+buildPerRowButtons();
 applyPerRow(perRow);
+// Rebuild + re-clamp if the viewport crosses the phone breakpoint.
+phoneMq.addEventListener("change", () => { buildPerRowButtons(); applyPerRow(perRow); });
 
 const SHOW_TAGS_KEY = "animeTracker.showTags";
 const showTags = $("showTags");

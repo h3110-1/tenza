@@ -320,6 +320,12 @@ body.vertical-rating .rating .bar:hover { transform: scaleX(1.12); }
 body.vertical-rating .rating-num,
 body.vertical-rating .dec-num { min-width: 0; text-align: center; }
 
+/* Tightest phone layout (3 per row): thinner vertical bars still. */
+body.thin-rating .rating-wrap { gap: 9px; }
+body.thin-rating .rating .bar { width: 15px; height: 7px; }
+body.thin-rating .rating-num,
+body.thin-rating .dec-num { font-size: 11px; }
+
 .tags { display: none; flex-wrap: wrap; gap: 5px; margin-top: auto; }
 body.show-tags .tags { display: flex; }
 .tag {
