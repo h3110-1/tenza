@@ -293,14 +293,25 @@ function tag(label) {
   return s;
 }
 
-/* ---------- Panel open/close + wiring ---------- */
-function openPanel() { renderPanel(); $("friendsPanel").style.display = "flex"; }
-function closePanel() { $("friendsPanel").style.display = "none"; }
+/* ---------- Menu open/close + wiring ---------- */
+// Mirrors the settings popover: toggle on the button, close on outside-click
+// or Esc. Opening one corner menu closes the other.
+function openPanel() { renderPanel(); $("friendsMenu").style.display = "block"; }
+export function closePanel() { $("friendsMenu").style.display = "none"; }
 
 export function initFriends() {
-  $("friendsBtn").addEventListener("click", openPanel);
-  $("friendsClose").addEventListener("click", closePanel);
-  $("friendsPanel").addEventListener("click", (e) => { if (e.target.id === "friendsPanel") closePanel(); });
+  const btn = $("friendsBtn");
+  const menu = $("friendsMenu");
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const willOpen = menu.style.display === "none";
+    $("settingsMenu").style.display = "none";
+    if (willOpen) openPanel(); else closePanel();
+  });
+  document.addEventListener("click", (e) => {
+    if (menu.style.display !== "none" && !menu.contains(e.target) && e.target !== btn) closePanel();
+  });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closePanel(); });
   $("viewingBack").addEventListener("click", backToMyList);
   $("friendSearch").addEventListener("input", (e) => {
     clearTimeout(searchTimer);

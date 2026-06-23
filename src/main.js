@@ -53,11 +53,11 @@ const settingsMenu = $("settingsMenu");
 const perRowChoices = $("perRowChoices");
 
 const perRowChoicesFor = () => (phoneMq.matches ? MOBILE_PER_ROW : DESKTOP_PER_ROW);
-let perRow = readJSON(PER_ROW_KEY, phoneMq.matches ? 2 : 4);
+let perRow = readJSON(PER_ROW_KEY, phoneMq.matches ? 2 : 3);
 
 function applyPerRow(n) {
   const allowed = perRowChoicesFor();
-  if (!allowed.includes(n)) n = phoneMq.matches ? Math.min(n, 3) : 4;
+  if (!allowed.includes(n)) n = phoneMq.matches ? Math.min(n, 3) : 3;
   if (!allowed.includes(n)) n = allowed[allowed.length - 1];
   perRow = n;
   document.documentElement.style.setProperty("--cards-per-row", String(n));
@@ -100,6 +100,7 @@ showTags.addEventListener("change", (e) => {
 
 settingsBtn.addEventListener("click", (e) => {
   e.stopPropagation();
+  $("friendsMenu").style.display = "none";
   settingsMenu.style.display = settingsMenu.style.display === "none" ? "block" : "none";
 });
 document.addEventListener("click", (e) => {
@@ -118,18 +119,17 @@ window.addEventListener("scroll", () => {
 }, { passive: true });
 backToTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
 
-/* ---------- Theme ---------- */
+/* ---------- Theme (a "Light mode" switch in the settings menu) ---------- */
 const THEME_KEY = "animeTracker.theme";
+const themeToggle = $("themeToggle");
 function applyTheme(theme) {
   document.body.classList.toggle("light", theme === "light");
-  const btn = $("themeToggle");
-  btn.textContent = theme === "light" ? "🌙 Dark" : "☀️ Light";
-  btn.title = theme === "light" ? "Switch to dark theme" : "Switch to light theme";
+  themeToggle.checked = theme === "light";
 }
 let theme = readJSON(THEME_KEY, "dark");
 applyTheme(theme);
-$("themeToggle").addEventListener("click", () => {
-  theme = theme === "light" ? "dark" : "light";
+themeToggle.addEventListener("change", () => {
+  theme = themeToggle.checked ? "light" : "dark";
   writeJSON(THEME_KEY, theme);
   applyTheme(theme);
 });

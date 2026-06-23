@@ -34,7 +34,9 @@ function updateWhoami() {
 function enterAuth() {
   $("authView").style.display = "flex";
   $("appView").style.display = "none";
-  $("whoami").style.display = "none";
+  $("friendsBtn").style.display = "none";
+  $("friendsMenu").style.display = "none";
+  $("userPanel").style.display = "none";
   resetSession();
   showEmailStep();
 }
@@ -42,7 +44,8 @@ function enterAuth() {
 function showApp() {
   $("authView").style.display = "none";
   $("appView").style.display = "block";
-  $("whoami").style.display = "inline-flex";
+  $("friendsBtn").style.display = "flex";
+  $("userPanel").style.display = "flex";
   updateWhoami();
 }
 
@@ -109,7 +112,9 @@ function showCodeStep() {
 function showUsernameStep() {
   $("authView").style.display = "flex";
   $("appView").style.display = "none";
-  $("whoami").style.display = "none";
+  $("friendsBtn").style.display = "none";
+  $("friendsMenu").style.display = "none";
+  $("userPanel").style.display = "none";
   $("authEmailStep").style.display = "none";
   $("authCodeStep").style.display = "none";
   $("authUsernameStep").style.display = "block";

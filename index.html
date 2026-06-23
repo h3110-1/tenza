@@ -10,6 +10,13 @@
   <button id="settingsBtn" class="settings-btn" title="Settings" aria-label="Settings">⚙</button>
   <div id="settingsMenu" class="settings-menu" style="display:none" role="dialog" aria-label="Settings">
     <div class="settings-menu-title">Settings</div>
+    <div class="settings-row settings-row-inline">
+      <span class="settings-label">Light mode</span>
+      <label class="switch">
+        <input type="checkbox" id="themeToggle" aria-label="Light mode" />
+        <span class="track"></span>
+      </label>
+    </div>
     <div class="settings-row">
       <span class="settings-label">Anime per row</span>
       <div class="settings-choices" id="perRowChoices"></div>
@@ -22,15 +29,34 @@
       </label>
     </div>
   </div>
-  <button id="themeToggle" class="theme-toggle"></button>
+  <button id="friendsBtn" class="settings-btn friends-btn" title="Friends" aria-label="Friends" style="display:none">👥<span id="friendsBadge" class="badge" style="display:none"></span></button>
+  <div id="friendsMenu" class="settings-menu friends-menu" style="display:none" role="dialog" aria-label="Friends">
+    <div class="settings-menu-title">Friends</div>
+    <div class="panel-section">
+      <div class="panel-label">Add a friend</div>
+      <input id="friendSearch" class="auth-input" type="text" placeholder="Search by username…" autocomplete="off" />
+      <div id="friendSearchResults" class="friend-results"></div>
+    </div>
+    <div class="panel-section" id="incomingSection" style="display:none">
+      <div class="panel-label">Friend requests</div>
+      <div id="incomingList"></div>
+    </div>
+    <div class="panel-section" id="outgoingSection" style="display:none">
+      <div class="panel-label">Sent requests</div>
+      <div id="outgoingList"></div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-label">Your friends</div>
+      <div id="friendsList"></div>
+    </div>
+  </div>
+  <div id="userPanel" class="user-panel" style="display:none">
+    <span class="user-line">Logged in as: <strong id="userEmail" class="editable-name" title="Click to change your username">user</strong></span>
+    <button class="ghost" id="signOut">Sign out</button>
+  </div>
   <header>
     <h1>Tenza</h1>
     <p>Search a show, tag it, rate it, and drag to rank your favourites.</p>
-    <div class="whoami" id="whoami" style="display:none">
-      Logged in as: <strong id="userEmail" class="editable-name" title="Click to change your username">user</strong>
-      <button class="ghost" id="friendsBtn">Friends <span id="friendsBadge" class="badge" style="display:none"></span></button>
-      <button class="ghost" id="signOut">Sign out</button>
-    </div>
   </header>
 
   <!-- Sign-in screen -->
@@ -110,33 +136,6 @@
 
     <div id="empty" class="empty" style="display:none">
       No shows yet — search for one above to get started. 🎬
-    </div>
-  </div>
-
-  <!-- Friends panel -->
-  <div id="friendsPanel" class="panel-overlay" style="display:none">
-    <div class="panel">
-      <div class="panel-head">
-        <span class="panel-title">Friends</span>
-        <button class="ghost" id="friendsClose">Close</button>
-      </div>
-      <div class="panel-section">
-        <div class="panel-label">Add a friend</div>
-        <input id="friendSearch" class="auth-input" type="text" placeholder="Search by username…" autocomplete="off" />
-        <div id="friendSearchResults" class="friend-results"></div>
-      </div>
-      <div class="panel-section" id="incomingSection" style="display:none">
-        <div class="panel-label">Friend requests</div>
-        <div id="incomingList"></div>
-      </div>
-      <div class="panel-section" id="outgoingSection" style="display:none">
-        <div class="panel-label">Sent requests</div>
-        <div id="outgoingList"></div>
-      </div>
-      <div class="panel-section">
-        <div class="panel-label">Your friends</div>
-        <div id="friendsList"></div>
-      </div>
     </div>
   </div>
 
