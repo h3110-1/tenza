@@ -11,8 +11,15 @@
   <div id="settingsMenu" class="settings-menu" style="display:none" role="dialog" aria-label="Settings">
     <div class="settings-menu-title">Settings</div>
     <div class="settings-row">
-      <span class="settings-label">Anime size <span class="settings-val" id="cardSizeVal"></span></span>
-      <input id="cardSize" type="range" min="140" max="340" step="10" value="220" aria-label="Anime card size" />
+      <span class="settings-label">Anime per row</span>
+      <div class="settings-choices" id="perRowChoices"></div>
+    </div>
+    <div class="settings-row settings-row-inline">
+      <span class="settings-label">Show tags</span>
+      <label class="switch">
+        <input type="checkbox" id="showTags" aria-label="Show tags on anime cards" />
+        <span class="track"></span>
+      </label>
     </div>
   </div>
   <button id="themeToggle" class="theme-toggle"></button>

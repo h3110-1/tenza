@@ -43,22 +43,44 @@ $("tagfilterToggle").addEventListener("click", () => {
 });
 
 /* ---------- Settings menu (device prefs, not user data) ---------- */
-const CARD_SIZE_KEY = "animeTracker.cardSize";
+const PER_ROW_KEY = "animeTracker.perRow";
+const PER_ROW_CHOICES = [2, 3, 4, 5, 6];
 const settingsBtn = $("settingsBtn");
 const settingsMenu = $("settingsMenu");
-const cardSize = $("cardSize");
+const perRowChoices = $("perRowChoices");
 
-function applyCardSize(px) {
-  document.documentElement.style.setProperty("--card-min", px + "px");
-  $("cardSizeVal").textContent = px + "px";
+let perRow = readJSON(PER_ROW_KEY, 4);
+if (!PER_ROW_CHOICES.includes(perRow)) perRow = 4;
+
+function applyPerRow(n) {
+  perRow = n;
+  document.documentElement.style.setProperty("--cards-per-row", String(n));
+  // Cards get narrow at 4+ per row — stack the rating bars vertically so the
+  // score doesn't get clipped.
+  document.body.classList.toggle("vertical-rating", n >= 4);
+  for (const b of perRowChoices.children) b.classList.toggle("active", Number(b.dataset.n) === n);
 }
-let cardSizePx = readJSON(CARD_SIZE_KEY, 220);
-cardSize.value = cardSizePx;
-applyCardSize(cardSizePx);
-cardSize.addEventListener("input", (e) => {
-  cardSizePx = Number(e.target.value);
-  applyCardSize(cardSizePx);
-  writeJSON(CARD_SIZE_KEY, cardSizePx);
+PER_ROW_CHOICES.forEach((n) => {
+  const b = document.createElement("button");
+  b.textContent = String(n);
+  b.dataset.n = n;
+  b.onclick = () => { applyPerRow(n); writeJSON(PER_ROW_KEY, n); };
+  perRowChoices.appendChild(b);
+});
+applyPerRow(perRow);
+
+const SHOW_TAGS_KEY = "animeTracker.showTags";
+const showTags = $("showTags");
+function applyShowTags(on) {
+  document.body.classList.toggle("show-tags", on);
+  showTags.checked = on;
+}
+let showTagsOn = readJSON(SHOW_TAGS_KEY, false);
+applyShowTags(showTagsOn);
+showTags.addEventListener("change", (e) => {
+  showTagsOn = e.target.checked;
+  applyShowTags(showTagsOn);
+  writeJSON(SHOW_TAGS_KEY, showTagsOn);
 });
 
 settingsBtn.addEventListener("click", (e) => {

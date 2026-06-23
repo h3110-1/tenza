@@ -10,7 +10,7 @@
   --star: #ffc83d;
   --danger: #ff5c5c;
   --radius: 14px;
-  --card-min: 220px;
+  --cards-per-row: 4;
 }
 body.light {
   --bg: #f4f5f8;
@@ -196,7 +196,7 @@ select {
 /* Grid */
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(var(--card-min), 1fr));
+  grid-template-columns: repeat(var(--cards-per-row), minmax(0, 1fr));
   gap: 16px;
   margin-top: 8px;
 }
@@ -310,7 +310,18 @@ select {
 .dec-num { color: var(--muted); font-size: 12px; min-width: 42px; text-align: right; font-variant-numeric: tabular-nums; }
 .dec-num.set { color: var(--accent); }
 
-.tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: auto; }
+/* Narrow cards (4+ per row): stack the rating bars vertically so the score
+   isn't clipped. The two meters (whole + decimal) sit side by side. */
+body.vertical-rating .rating-wrap { flex-direction: row; gap: 14px; align-items: flex-start; }
+body.vertical-rating .rating { flex-direction: column; align-items: center; gap: 6px; }
+body.vertical-rating .rating .bars { flex-direction: column-reverse; gap: 3px; }
+body.vertical-rating .rating .bar { width: 26px; height: 9px; }
+body.vertical-rating .rating .bar:hover { transform: scaleX(1.12); }
+body.vertical-rating .rating-num,
+body.vertical-rating .dec-num { min-width: 0; text-align: center; }
+
+.tags { display: none; flex-wrap: wrap; gap: 5px; margin-top: auto; }
+body.show-tags .tags { display: flex; }
 .tag {
   background: var(--panel-2); border: 1px solid var(--border);
   border-radius: 999px; padding: 3px 9px; font-size: 11px; color: var(--text);
@@ -375,11 +386,34 @@ select {
 .settings-menu-title { font-size: 14px; font-weight: 700; margin-bottom: 14px; }
 .settings-row { display: flex; flex-direction: column; gap: 8px; }
 .settings-row .settings-label {
-  display: flex; justify-content: space-between; align-items: baseline;
   font-size: 12px; color: var(--muted); font-weight: 600;
 }
-.settings-row .settings-val { color: var(--accent); }
-.settings-row input[type="range"] { width: 100%; accent-color: var(--accent); cursor: pointer; }
+.settings-choices { display: flex; gap: 6px; }
+.settings-choices button {
+  flex: 1; padding: 7px 0; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--panel-2); color: var(--text);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.settings-choices button:hover { border-color: var(--accent); }
+.settings-choices button.active {
+  background: var(--accent); border-color: var(--accent); color: #fff;
+}
+.settings-row-inline {
+  flex-direction: row; align-items: center; justify-content: space-between;
+}
+.switch { position: relative; display: inline-block; width: 40px; height: 22px; flex: none; cursor: pointer; }
+.switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+.switch .track {
+  position: absolute; inset: 0; border-radius: 999px;
+  background: var(--panel-2); border: 1px solid var(--border); transition: background .15s ease, border-color .15s ease;
+}
+.switch .track::before {
+  content: ""; position: absolute; top: 2px; left: 2px;
+  width: 16px; height: 16px; border-radius: 999px; background: var(--muted);
+  transition: transform .15s ease, background .15s ease;
+}
+.switch input:checked + .track { background: var(--accent); border-color: var(--accent); }
+.switch input:checked + .track::before { transform: translateX(18px); background: #fff; }
 
 .back-to-top {
   position: fixed; bottom: 24px; right: 24px; z-index: 60;
