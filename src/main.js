@@ -42,6 +42,38 @@ $("tagfilterToggle").addEventListener("click", () => {
   $("tagfilterSection").classList.toggle("collapsed", state.tagFilterCollapsed);
 });
 
+/* ---------- Settings menu (device prefs, not user data) ---------- */
+const CARD_SIZE_KEY = "animeTracker.cardSize";
+const settingsBtn = $("settingsBtn");
+const settingsMenu = $("settingsMenu");
+const cardSize = $("cardSize");
+
+function applyCardSize(px) {
+  document.documentElement.style.setProperty("--card-min", px + "px");
+  $("cardSizeVal").textContent = px + "px";
+}
+let cardSizePx = readJSON(CARD_SIZE_KEY, 220);
+cardSize.value = cardSizePx;
+applyCardSize(cardSizePx);
+cardSize.addEventListener("input", (e) => {
+  cardSizePx = Number(e.target.value);
+  applyCardSize(cardSizePx);
+  writeJSON(CARD_SIZE_KEY, cardSizePx);
+});
+
+settingsBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+  settingsMenu.style.display = settingsMenu.style.display === "none" ? "block" : "none";
+});
+document.addEventListener("click", (e) => {
+  if (settingsMenu.style.display !== "none" && !settingsMenu.contains(e.target)) {
+    settingsMenu.style.display = "none";
+  }
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") settingsMenu.style.display = "none";
+});
+
 /* ---------- Back to top ---------- */
 const backToTop = $("backToTop");
 window.addEventListener("scroll", () => {

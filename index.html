@@ -8,6 +8,13 @@
 </head>
 <body>
   <button id="settingsBtn" class="settings-btn" title="Settings" aria-label="Settings">⚙</button>
+  <div id="settingsMenu" class="settings-menu" style="display:none" role="dialog" aria-label="Settings">
+    <div class="settings-menu-title">Settings</div>
+    <div class="settings-row">
+      <span class="settings-label">Anime size <span class="settings-val" id="cardSizeVal"></span></span>
+      <input id="cardSize" type="range" min="140" max="340" step="10" value="220" aria-label="Anime card size" />
+    </div>
+  </div>
   <button id="themeToggle" class="theme-toggle"></button>
   <header>
     <h1>Tenza</h1>
