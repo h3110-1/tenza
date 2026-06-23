@@ -178,7 +178,19 @@ select {
 }
 .list-filter:focus { border-color: var(--accent); }
 
-.tagfilter { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 16px; }
+.tagfilter-section { margin: 8px 0 16px; }
+.tagfilter-head {
+  display: flex; align-items: center; gap: 8px;
+  cursor: pointer; user-select: none;
+}
+.tagfilter-head .chevron {
+  color: var(--muted); font-size: 11px; transition: transform .15s ease;
+}
+.tagfilter-label { font-size: 13px; font-weight: 600; color: var(--text); }
+.tagfilter-active { font-size: 12px; color: var(--accent); font-weight: 600; }
+.tagfilter { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.tagfilter-section.collapsed .chevron { transform: rotate(-90deg); }
+.tagfilter-section.collapsed .tagfilter { display: none; }
 
 /* Grid */
 .grid {

@@ -76,7 +76,11 @@ function renderTagFilter() {
   const box = $("tagfilter");
   box.innerHTML = "";
   const tags = allTags();
+  const section = $("tagfilterSection");
+  section.style.display = tags.length ? "" : "none";
   if (!tags.length) return;
+  section.classList.toggle("collapsed", state.tagFilterCollapsed);
+  $("tagfilterActive").textContent = state.activeTagFilter ? "#" + state.activeTagFilter : "";
   tags.forEach((t) => {
     const b = document.createElement("button");
     b.className = "ghost" + (state.activeTagFilter === t ? " active" : "");

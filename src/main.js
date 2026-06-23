@@ -37,6 +37,10 @@ $("unratedToggle").addEventListener("click", () => {
   state.unratedCollapsed = !state.unratedCollapsed;
   $("unratedSection").classList.toggle("collapsed", state.unratedCollapsed);
 });
+$("tagfilterToggle").addEventListener("click", () => {
+  state.tagFilterCollapsed = !state.tagFilterCollapsed;
+  $("tagfilterSection").classList.toggle("collapsed", state.tagFilterCollapsed);
+});
 
 /* ---------- Back to top ---------- */
 const backToTop = $("backToTop");

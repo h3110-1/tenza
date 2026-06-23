@@ -11,6 +11,7 @@ export const state = {
   listFilter: "",           // free-text filter within the current list
   activeStatusFilter: null, // null = all statuses
   unratedCollapsed: false,  // is the Unrated section collapsed?
+  tagFilterCollapsed: true, // is the tag filter list collapsed?
 
   // Friends
   viewingFriend: null,      // { id, username } when viewing a friend's list, else null
