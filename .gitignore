@@ -8,3 +8,10 @@ node_modules/
 
 # Claude Code local tooling config (preview server, etc.)
 .claude/
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example

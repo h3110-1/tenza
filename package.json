@@ -4,6 +4,11 @@
   "version": "0.0.0",
   "description": "Anime watchlist app (buildless static site; package.json exists only so instant-cli recognizes the project root).",
   "devDependencies": {
-    "@instantdb/core": "latest"
+    "@instantdb/core": "latest",
+    "wrangler": "^4.105.0"
+  },
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "preview": "wrangler dev"
   }
 }
